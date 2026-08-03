@@ -1,0 +1,23 @@
+import 'package:flutter/material.dart';
+
+import 'core/config/app_router.dart';
+import 'core/config/app_theme.dart';
+
+void main() {
+  runApp(const ClosetAiApp());
+}
+
+class ClosetAiApp extends StatelessWidget {
+  const ClosetAiApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: 'ClosetAI',
+      routerConfig: appRouter,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
+    );
+  }
+}
