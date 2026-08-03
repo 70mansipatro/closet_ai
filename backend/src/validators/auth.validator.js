@@ -6,8 +6,8 @@ export const registerSchema = Joi.object({
   phone: Joi.string().allow('').optional(),
   password: Joi.string().min(6).required(),
   gender: Joi.string().valid('male', 'female', 'other', 'prefer-not-to-say').optional(),
-  height: Joi.number().min(0).optional(),
-  weight: Joi.number().min(0).optional(),
+  height: Joi.number().min(0).allow(null).optional(),
+  weight: Joi.number().min(0).allow(null).optional(),
   preferredStyle: Joi.string().max(40).optional(),
   role: Joi.string().valid('user', 'admin').optional(),
 });

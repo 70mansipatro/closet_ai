@@ -3,6 +3,10 @@ import User from '../models/User.js';
 export const createUser = async (data) => User.create(data);
 
 export const findUserByEmail = async (email) => {
+  if (!email || typeof email !== 'string') {
+    return null;
+  }
+
   return User.findOne({ email: email.toLowerCase() });
 };
 

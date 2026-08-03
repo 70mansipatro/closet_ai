@@ -18,12 +18,7 @@ class AuthRepository {
       data: {
         'name': payload['name']?.trim(),
         'email': payload['email']?.trim(),
-        'phone': payload['phone']?.trim() ?? '',
         'password': payload['password'],
-        'gender': payload['gender'] ?? 'prefer-not-to-say',
-        'height': payload['height'],
-        'weight': payload['weight'],
-        'preferredStyle': payload['preferredStyle'] ?? 'casual',
       },
     );
   }

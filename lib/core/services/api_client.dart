@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../constants/app_constants.dart';
@@ -9,6 +10,27 @@ class ApiClient {
     _dio.options.connectTimeout = const Duration(seconds: 10);
     _dio.options.receiveTimeout = const Duration(seconds: 10);
     _dio.options.headers['Content-Type'] = 'application/json';
+    _dio.options.headers['Accept'] = 'application/json';
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          debugPrint('[DIO] ${options.method} ${options.uri}');
+          debugPrint('[DIO] body: ${options.data}');
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          debugPrint('[DIO] response ${response.statusCode} ${response.data}');
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          debugPrint('[DIO] error ${error.type} ${error.message}');
+          if (error.response != null) {
+            debugPrint('[DIO] response data: ${error.response?.data}');
+          }
+          handler.next(error);
+        },
+      ),
+    );
   }
 
   final Dio _dio = Dio();
@@ -19,7 +41,10 @@ class ApiClient {
     final response = await _dio.get(
       path,
       options: Options(
-        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
       ),
     );
     return Map<String, dynamic>.from(response.data as Map);
@@ -34,7 +59,10 @@ class ApiClient {
       path,
       data: data,
       options: Options(
-        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
       ),
     );
     return Map<String, dynamic>.from(response.data as Map);

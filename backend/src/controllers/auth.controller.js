@@ -16,11 +16,13 @@ import { createUser, findUserByEmail, findUserById, updateUserProfile, deleteUse
 import { AppError } from '../utils/appError.js';
 
 export const signTokens = async (user) => {
+  console.log('[AUTH JWT] creating tokens for user', { userId: user?._id, email: user?.email });
   const accessToken = jwt.sign({ userId: user._id, role: user.role }, jwtConfig.accessTokenSecret, { expiresIn: jwtConfig.accessTokenExpiry });
   const refreshToken = jwt.sign({ userId: user._id }, jwtConfig.refreshTokenSecret, { expiresIn: jwtConfig.refreshTokenExpiry });
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await RefreshToken.create({ user: user._id, token: refreshToken, expiresAt });
+  const refreshRecord = await RefreshToken.create({ user: user._id, token: refreshToken, expiresAt });
+  console.log('[AUTH JWT] refresh token stored in MongoDB', { refreshTokenId: refreshRecord?._id, userId: user?._id });
 
   return { accessToken, refreshToken };
 };
@@ -43,17 +45,52 @@ const sanitizeUser = (user) => ({
 
 export const registerUser = async (req, res, next) => {
   try {
-    const { error, value } = registerSchema.validate(req.body);
-    if (error) throw new AppError(error.details[0].message, 400);
+    console.log('[AUTH REGISTER] Incoming Register Request');
+    console.log('[AUTH REGISTER] headers', req.headers);
+    console.log('[AUTH REGISTER] body', req.body);
+
+    const { error, value } = registerSchema.validate(req.body, { abortEarly: false });
+    console.log('[AUTH REGISTER] validation result', {
+      hasError: Boolean(error),
+      details: error?.details || null,
+      sanitizedValue: value
+        ? {
+            name: value.name,
+            email: value.email,
+            passwordLength: value.password?.length || 0,
+          }
+        : null,
+    });
+
+    if (error) {
+      const messages = error.details.map((detail) => detail.message).join(', ');
+      console.warn('[AUTH REGISTER] validation failed', {
+        body: req.body,
+        details: error.details,
+      });
+      throw new AppError(messages, 400);
+    }
 
     const existing = await findUserByEmail(value.email);
-    if (existing) throw new AppError('Email already registered', 409);
+    console.log('[AUTH REGISTER] existing user lookup result', { found: Boolean(existing), email: value.email });
+    if (existing) {
+      console.warn('[AUTH REGISTER] duplicate email', { email: value.email });
+      throw new AppError('Email already registered', 409);
+    }
 
     const user = await createUser({ ...value, email: value.email.toLowerCase() });
-    const tokens = await signTokens(user);
+    console.log('[AUTH REGISTER] MongoDB create result', { userId: user?._id, email: user?.email });
 
-    res.status(201).json({ user: sanitizeUser(user), ...tokens });
+    const tokens = await signTokens(user);
+    console.log('[AUTH REGISTER] JWT creation complete', { userId: user?._id });
+
+    res.status(201).json({ success: true, user: sanitizeUser(user), ...tokens });
   } catch (error) {
+    console.error('[AUTH REGISTER] registration failed', {
+      email: req.body?.email,
+      message: error.message,
+      stack: error.stack,
+    });
     next(error);
   }
 };

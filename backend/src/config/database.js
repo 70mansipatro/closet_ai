@@ -31,6 +31,7 @@ export const connectDatabase = async () => {
 
   mongoose.set('strictQuery', true);
 
+  console.log('[DB] attempting MongoDB connection');
   connectionPromise = mongoose
     .connect(mongoURI, {
       autoIndex: false,
@@ -41,6 +42,7 @@ export const connectDatabase = async () => {
     })
     .then(() => {
       console.log('✅ MongoDB Connected');
+      console.log('[DB] readyState', mongoose.connection.readyState);
       return true;
     })
     .catch((error) => {
