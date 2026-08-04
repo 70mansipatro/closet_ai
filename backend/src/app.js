@@ -14,6 +14,9 @@ import outfitRoutes from './routes/outfit.routes.js';
 import tripRoutes from './routes/trip.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { isDatabaseConnected } from './config/database.js';
+import { protect } from './middleware/auth.js';
+import { uploadSingle } from './middleware/upload.js';
+import { analyzeClothing } from './controllers/clothing.controller.js';
 
 const app = express();
 
@@ -43,7 +46,15 @@ const corsOptions = {
 };
 
 app.use((req, res, next) => {
-  console.log('[REQUEST]', req.method, req.originalUrl, { origin: req.headers.origin || null });
+  const requestBody = req.body && Object.keys(req.body).length > 0 ? req.body : null;
+  console.log('[REQUEST]', {
+    method: req.method,
+    path: req.originalUrl,
+    origin: req.headers.origin || null,
+    authorizationPresent: !!req.headers.authorization,
+    contentType: req.headers['content-type'] || null,
+    requestBody,
+  });
 
   if (req.method === 'OPTIONS') {
     console.log(`[CORS] OPTIONS request received for ${req.originalUrl}`);
@@ -53,7 +64,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
     console.log(`[CORS] Returning preflight headers for ${req.originalUrl}`);
-    return res.sendStatus(204);
+    return res.sendStatus(200);
   }
 
   if (req.method === 'POST' && req.path === '/api/auth/register') {
@@ -65,7 +76,7 @@ app.use((req, res, next) => {
 
 app.use(cors(corsOptions));
 app.options(/\/api\/(.*)/, cors(corsOptions), (_req, res) => {
-  res.sendStatus(204);
+  res.sendStatus(200);
 });
 
 app.use((req, res, next) => {
@@ -130,9 +141,58 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/clothes', clothingRoutes);
 app.use('/api/clothing', clothingRoutes);
+app.use('/api/ai', (req, res, next) => {
+  console.log('[AI CATCHER] request', {
+    method: req.method,
+    originalUrl: req.originalUrl,
+    url: req.url,
+    path: req.path,
+    baseUrl: req.baseUrl,
+    headers: {
+      authorization: req.headers.authorization,
+      'content-type': req.headers['content-type'],
+    },
+  });
+  next();
+});
+const aiAnalyzeRequestLogger = (req, res, next) => {
+  console.log('[ANALYZE ROUTE] entry', {
+    method: req.method,
+    originalUrl: req.originalUrl,
+    url: req.url,
+    path: req.path,
+    baseUrl: req.baseUrl,
+    headers: {
+      authorization: req.headers.authorization,
+      'content-type': req.headers['content-type'],
+    },
+  });
+  next();
+};
+
+app.post('/api/ai/analyze', aiAnalyzeRequestLogger, protect, uploadSingle, analyzeClothing);
+app.post('/api/clothing/analyze', aiAnalyzeRequestLogger, protect, uploadSingle, analyzeClothing);
 app.use('/api/outfits', outfitRoutes);
 app.use('/api/trips', tripRoutes);
+
+const listRoutes = () => {
+  const stack = app._router?.stack || app.router?.stack || [];
+  if (!Array.isArray(stack)) {
+    return [];
+  }
+
+  return stack
+    .filter((layer) => layer?.route)
+    .map((layer) => ({
+      path: layer.route.path,
+      methods: Object.keys(layer.route.methods).join(',').toUpperCase(),
+    }));
+};
+
+console.log('[ROUTES] app._router exists', !!app._router, 'app.router exists', !!app.router);
+console.log('[ROUTES] Registered application routes', listRoutes());
 
 app.use(errorHandler);
 

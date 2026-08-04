@@ -1,24 +1,44 @@
-import Clothing from '../models/Clothing.js';
-import User from '../models/User.js';
-import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinary.service.js';
+import { AppError } from '../utils/appError.js';
 import { createClothingSchema, updateClothingSchema } from '../validators/clothing.validator.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinary.service.js';
+import { analyzeClothingImage, buildClothingPayload, validateAnalysisConfig } from '../services/clothing.service.js';
+import {
+  createClothingItem,
+  deleteClothingItem,
+  findClothingById,
+  findClothingItems,
+  updateClothingItem,
+} from '../repositories/clothing.repository.js';
 
 export const createClothing = async (req, res, next) => {
   try {
-    const { error, value } = createClothingSchema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
+    const body = req.body || {};
+    const { error, value } = createClothingSchema.validate(body);
+    if (error) {
+      throw new AppError(error.details[0].message, 400);
+    }
 
-    let imageUrl = '';
-    let publicId = '';
+    let imageUrl = value.imageUrl || '';
+    let publicId = value.publicId || '';
+    let aiAnalysis = {};
 
     if (req.file) {
+      aiAnalysis = await analyzeClothingImage(req.file.buffer);
       const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/clothing');
       imageUrl = uploadResult.secure_url;
       publicId = uploadResult.public_id;
     }
 
-    const clothing = await Clothing.create({ ...value, owner: req.user._id, imageUrl, publicId });
-    res.status(201).json(clothing);
+    const payload = await buildClothingPayload({
+      payload: value,
+      imageUrl,
+      publicId,
+      userId: req.user._id,
+      aiAnalysis,
+    });
+
+    const clothing = await createClothingItem(payload);
+    res.status(201).json({ success: true, data: clothing });
   } catch (error) {
     next(error);
   }
@@ -26,8 +46,38 @@ export const createClothing = async (req, res, next) => {
 
 export const listClothing = async (req, res, next) => {
   try {
-    const clothing = await Clothing.find({ owner: req.user._id }).sort({ createdAt: -1 });
-    res.json(clothing);
+    const {
+      page,
+      limit,
+      search,
+      category,
+      color,
+      brand,
+      season,
+      occasion,
+      laundryStatus,
+      favorite,
+      sortBy,
+      sortOrder,
+    } = req.query;
+
+    const result = await findClothingItems({
+      userId: req.user._id,
+      page,
+      limit,
+      search,
+      category,
+      color,
+      brand,
+      season,
+      occasion,
+      laundryStatus,
+      favorite,
+      sortBy,
+      sortOrder,
+    });
+
+    res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
   } catch (error) {
     next(error);
   }
@@ -35,9 +85,12 @@ export const listClothing = async (req, res, next) => {
 
 export const getClothing = async (req, res, next) => {
   try {
-    const clothing = await Clothing.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!clothing) return res.status(404).json({ message: 'Clothing item not found' });
-    res.json(clothing);
+    const clothing = await findClothingById({ userId: req.user._id, id: req.params.id });
+    if (!clothing) {
+      throw new AppError('Clothing item not found', 404);
+    }
+
+    res.status(200).json({ success: true, data: clothing });
   } catch (error) {
     next(error);
   }
@@ -45,22 +98,81 @@ export const getClothing = async (req, res, next) => {
 
 export const updateClothing = async (req, res, next) => {
   try {
-    const { error, value } = updateClothingSchema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-
-    const clothing = await Clothing.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!clothing) return res.status(404).json({ message: 'Clothing item not found' });
-
-    if (req.file) {
-      if (clothing.publicId) await deleteFromCloudinary(clothing.publicId);
-      const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/clothing');
-      value.imageUrl = uploadResult.secure_url;
-      value.publicId = uploadResult.public_id;
+    const body = req.body || {};
+    const { error, value } = updateClothingSchema.validate(body);
+    if (error) {
+      throw new AppError(error.details[0].message, 400);
     }
 
-    Object.assign(clothing, value);
-    await clothing.save();
-    res.json(clothing);
+    const clothing = await findClothingById({ userId: req.user._id, id: req.params.id });
+    if (!clothing) {
+      throw new AppError('Clothing item not found', 404);
+    }
+
+    let aiAnalysis = {};
+    let imageUrl = clothing.imageUrl;
+    let publicId = clothing.publicId;
+
+    if (req.file) {
+      aiAnalysis = await analyzeClothingImage(req.file.buffer);
+      if (clothing.publicId) {
+        await deleteFromCloudinary(clothing.publicId);
+      }
+      const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/clothing');
+      imageUrl = uploadResult.secure_url;
+      publicId = uploadResult.public_id;
+    }
+
+    const payload = await buildClothingPayload({
+      payload: { ...value, imageUrl, publicId },
+      imageUrl,
+      publicId,
+      userId: req.user._id,
+      aiAnalysis,
+    });
+
+    const updatedClothing = await updateClothingItem({ userId: req.user._id, id: req.params.id, updateData: payload });
+    res.status(200).json({ success: true, data: updatedClothing });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const analyzeClothing = async (req, res, next) => {
+  try {
+    console.log('[BACKEND] Clothing analyze request received', {
+      path: req.originalUrl,
+      method: req.method,
+      userId: req.user?._id,
+      hasFile: !!req.file,
+      file: req.file
+        ? {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+          }
+        : null,
+    });
+
+    if (!req.file) {
+      throw new AppError('Image file is required for analysis', 400);
+    }
+
+    const config = validateAnalysisConfig(process.env);
+    if (!config.isValid) {
+      throw new AppError('Missing required configuration for AI analysis', 500, { missing: config.missing });
+    }
+
+    const aiAnalysis = await analyzeClothingImage(req.file.buffer);
+    const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/analysis');
+    res.status(200).json({
+      success: true,
+      data: {
+        ...aiAnalysis,
+        imageUrl: uploadResult?.secure_url || '',
+        publicId: uploadResult?.public_id || '',
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -68,34 +180,17 @@ export const updateClothing = async (req, res, next) => {
 
 export const deleteClothing = async (req, res, next) => {
   try {
-    const clothing = await Clothing.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!clothing) return res.status(404).json({ message: 'Clothing item not found' });
-
-    if (clothing.publicId) await deleteFromCloudinary(clothing.publicId);
-    await clothing.deleteOne();
-    res.json({ message: 'Clothing item deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const toggleFavoriteClothing = async (req, res, next) => {
-  try {
-    const clothing = await Clothing.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!clothing) return res.status(404).json({ message: 'Clothing item not found' });
-
-    clothing.isFavorite = !clothing.isFavorite;
-    await clothing.save();
-
-    const user = await User.findById(req.user._id);
-    if (clothing.isFavorite) {
-      if (!user.favorites.includes(clothing._id)) user.favorites.push(clothing._id);
-    } else {
-      user.favorites = user.favorites.filter((id) => id.toString() !== clothing._id.toString());
+    const clothing = await findClothingById({ userId: req.user._id, id: req.params.id });
+    if (!clothing) {
+      throw new AppError('Clothing item not found', 404);
     }
-    await user.save();
 
-    res.json({ clothing, message: clothing.isFavorite ? 'Added to favorites' : 'Removed from favorites' });
+    if (clothing.publicId) {
+      await deleteFromCloudinary(clothing.publicId);
+    }
+
+    await deleteClothingItem({ userId: req.user._id, id: req.params.id });
+    res.status(200).json({ success: true, message: 'Clothing item deleted successfully' });
   } catch (error) {
     next(error);
   }

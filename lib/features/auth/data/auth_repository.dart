@@ -13,13 +13,31 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> register(Map<String, dynamic> payload) {
+    final data = <String, dynamic>{
+      'name': payload['name']?.trim(),
+      'email': payload['email']?.trim(),
+      'password': payload['password'],
+    };
+
+    if (payload['phone'] != null) {
+      data['phone'] = payload['phone']?.trim();
+    }
+    if (payload['gender'] != null) {
+      data['gender'] = payload['gender'];
+    }
+    if (payload['height'] != null) {
+      data['height'] = payload['height'];
+    }
+    if (payload['weight'] != null) {
+      data['weight'] = payload['weight'];
+    }
+    if (payload['preferredStyle'] != null) {
+      data['preferredStyle'] = payload['preferredStyle'];
+    }
+
     return _apiClient.post(
       '/auth/register',
-      data: {
-        'name': payload['name']?.trim(),
-        'email': payload['email']?.trim(),
-        'password': payload['password'],
-      },
+      data: data,
     );
   }
 

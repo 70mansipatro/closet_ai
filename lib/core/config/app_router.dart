@@ -16,6 +16,8 @@ import '../../features/packing/presentation/pages/packing_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
 import '../../features/trip/presentation/pages/trip_page.dart';
+import '../../features/wardrobe/domain/wardrobe_item.dart';
+import '../../features/wardrobe/presentation/pages/wardrobe_form_page.dart';
 import '../../features/wardrobe/presentation/pages/wardrobe_page.dart';
 import '../../widgets/app_shell.dart';
 
@@ -64,6 +66,15 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/wardrobe',
           builder: (context, state) => const WardrobePage(),
+        ),
+        GoRoute(
+          path: '/wardrobe/form',
+          builder: (context, state) {
+            final item = state.extra is WardrobeItem
+                ? state.extra as WardrobeItem
+                : null;
+            return WardrobeFormPage(item: item);
+          },
         ),
         GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
         GoRoute(path: '/trips', builder: (context, state) => const TripPage()),

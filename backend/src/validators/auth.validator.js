@@ -3,13 +3,13 @@ import Joi from 'joi';
 export const registerSchema = Joi.object({
   name: Joi.string().min(2).max(80).required(),
   email: Joi.string().email().required(),
-  phone: Joi.string().allow('').optional(),
+  phone: Joi.string().allow('', null).optional(),
   password: Joi.string().min(6).required(),
-  gender: Joi.string().valid('male', 'female', 'other', 'prefer-not-to-say').optional(),
+  gender: Joi.string().valid('male', 'female', 'other', 'prefer-not-to-say').allow(null).optional(),
   height: Joi.number().min(0).allow(null).optional(),
   weight: Joi.number().min(0).allow(null).optional(),
-  preferredStyle: Joi.string().max(40).optional(),
-  role: Joi.string().valid('user', 'admin').optional(),
+  preferredStyle: Joi.string().max(40).allow(null).optional(),
+  role: Joi.string().valid('user', 'admin').allow(null).optional(),
 });
 
 export const loginSchema = Joi.object({

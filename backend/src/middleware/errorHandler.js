@@ -36,7 +36,8 @@ export const errorHandler = (err, req, res, next) => {
   res.status(status).json({
     success: false,
     message: err.message || 'Internal server error',
-    error: err.name || 'Error',
+    error: err.name || err.code || 'Error',
+    details: err.details,
     stack: isDevelopment ? err.stack : undefined,
   });
 };

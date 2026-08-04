@@ -49,7 +49,17 @@ export const registerUser = async (req, res, next) => {
     console.log('[AUTH REGISTER] headers', req.headers);
     console.log('[AUTH REGISTER] body', req.body);
 
-    const { error, value } = registerSchema.validate(req.body, { abortEarly: false });
+    const payload = {
+      ...req.body,
+      phone: req.body.phone ?? undefined,
+      gender: req.body.gender ?? undefined,
+      height: req.body.height == null ? undefined : req.body.height,
+      weight: req.body.weight == null ? undefined : req.body.weight,
+      preferredStyle: req.body.preferredStyle ?? undefined,
+      role: req.body.role ?? undefined,
+    };
+
+    const { error, value } = registerSchema.validate(payload, { abortEarly: false, stripUnknown: true });
     console.log('[AUTH REGISTER] validation result', {
       hasError: Boolean(error),
       details: error?.details || null,

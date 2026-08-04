@@ -7,6 +7,13 @@ dotenv.config({ path: envPath });
 
 console.log('dotenv config loaded from:', envPath);
 console.log('Mongo URI exists in server:', !!process.env.MONGODB_URI);
+console.log('Gemini API key loaded:', !!process.env.GEMINI_API_KEY);
+console.log('Gemini model configured:', process.env.GEMINI_MODEL || 'gemini-2.0-flash');
+console.log('Cloudinary credentials available in server:', {
+  cloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+  apiKey: !!process.env.CLOUDINARY_API_KEY,
+  apiSecret: !!process.env.CLOUDINARY_API_SECRET,
+});
 
 const { default: app } = await import('./app.js');
 const { connectDatabase } = await import('./config/database.js');

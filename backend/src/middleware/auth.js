@@ -8,13 +8,20 @@ export const protect = async (req, res, next) => {
     const authHeader = req.headers.authorization || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
+    console.log('[AUTH] protect middleware', {
+      path: req.originalUrl,
+      hasAuthorizationHeader: !!authHeader,
+      tokenLength: token ? token.length : 0,
+    });
+
     if (!token) {
       throw new AppError('Authentication required', 401);
     }
 
     const decoded = jwt.verify(token, jwtConfig.accessTokenSecret);
-    const user = await User.findById(decoded.userId).select('-password');
+    console.log('[AUTH] JWT decoded', { userId: decoded.userId, role: decoded.role });
 
+    const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
       throw new AppError('User not found', 401);
     }
@@ -22,6 +29,12 @@ export const protect = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error('[AUTH] protect middleware error', {
+      path: req.originalUrl,
+      errorName: error.name,
+      errorMessage: error.message,
+    });
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token expired' });
     }
