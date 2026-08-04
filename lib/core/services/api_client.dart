@@ -66,4 +66,25 @@ class ApiClient {
     final response = await _dio.post(path, data: data);
     return _parseResponse(response);
   }
+
+  Future<Map<String, dynamic>> getWithQuery(
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
+    final response = await _dio.get(path, queryParameters: query);
+    return _parseResponse(response);
+  }
+
+  Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, dynamic>? data,
+  }) async {
+    final response = await _dio.put(path, data: data);
+    return _parseResponse(response);
+  }
+
+  Future<Map<String, dynamic>> delete(String path) async {
+    final response = await _dio.delete(path);
+    return _parseResponse(response);
+  }
 }

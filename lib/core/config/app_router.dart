@@ -1,6 +1,9 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/ai/presentation/pages/ai_home_page.dart';
 import '../../features/ai/presentation/pages/ai_page.dart';
+import '../../features/ai/presentation/pages/favorite_outfits_page.dart';
+import '../../features/ai/presentation/pages/saved_outfits_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/otp_verification_page.dart';
@@ -70,13 +73,40 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/wardrobe/form',
           builder: (context, state) {
-            final item = state.extra is WardrobeItem
-                ? state.extra as WardrobeItem
-                : null;
-            return WardrobeFormPage(item: item);
+            WardrobeItem? item;
+            String? initialCategory;
+
+            final extra = state.extra;
+            if (extra is WardrobeItem) {
+              item = extra;
+            } else if (extra is Map) {
+              if (extra['item'] is WardrobeItem) {
+                item = extra['item'] as WardrobeItem;
+              }
+              if (extra['category'] != null) {
+                initialCategory = extra['category'].toString();
+              }
+            }
+
+            return WardrobeFormPage(
+              item: item,
+              initialCategory: initialCategory,
+            );
           },
         ),
-        GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
+        GoRoute(path: '/ai', builder: (context, state) => const AiHomePage()),
+        GoRoute(
+          path: '/ai/generate',
+          builder: (context, state) => const AiPage(),
+        ),
+        GoRoute(
+          path: '/ai/saved',
+          builder: (context, state) => const SavedOutfitsPage(),
+        ),
+        GoRoute(
+          path: '/ai/favorites',
+          builder: (context, state) => const FavoriteOutfitsPage(),
+        ),
         GoRoute(path: '/trips', builder: (context, state) => const TripPage()),
         GoRoute(
           path: '/packing',

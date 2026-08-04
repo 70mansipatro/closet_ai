@@ -14,9 +14,10 @@ import '../../domain/wardrobe_item.dart';
 import '../widgets/platform_image_preview.dart';
 
 class WardrobeFormPage extends ConsumerStatefulWidget {
-  const WardrobeFormPage({super.key, this.item});
+  const WardrobeFormPage({super.key, this.item, this.initialCategory});
 
   final WardrobeItem? item;
+  final String? initialCategory;
 
   @override
   ConsumerState<WardrobeFormPage> createState() => _WardrobeFormPageState();
@@ -47,6 +48,8 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
   void initState() {
     super.initState();
     final item = widget.item;
+    final initialCategory = widget.initialCategory;
+
     if (item != null) {
       _titleController.text = item.subCategory;
       _brandController.text = item.brand;
@@ -60,10 +63,39 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
       _secondaryColorController.text = '';
       _patternController.text = '';
       _fabricController.text = '';
-      _category = item.category;
+      _category = _normalizeCategory(item.category);
       _season = item.season;
       _laundryStatus = item.laundryStatus;
       _favorite = item.favorite;
+    } else if (initialCategory != null && initialCategory.isNotEmpty) {
+      _category = _normalizeCategory(initialCategory);
+    }
+  }
+
+  String _normalizeCategory(String category) {
+    final normalized = category.trim().toLowerCase();
+    switch (normalized) {
+      case 'top':
+      case 'tops':
+        return 'top';
+      case 'bottom':
+      case 'bottoms':
+        return 'bottom';
+      case 'shoe':
+      case 'shoes':
+      case 'footwear':
+        return 'shoes';
+      case 'outerwear':
+      case 'jacket':
+      case 'coat':
+        return 'outerwear';
+      case 'accessory':
+      case 'accessories':
+        return 'accessory';
+      case 'other':
+        return 'other';
+      default:
+        return 'top';
     }
   }
 
@@ -407,6 +439,34 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
                 decoration: const InputDecoration(labelText: 'Notes'),
               ),
               const SizedBox(height: 24),
+              if (widget.item != null) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Wear History',
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        _ReadOnlyInfoRow(
+                          label: 'Last Worn',
+                          value: widget.item!.lastWorn?.isNotEmpty == true
+                              ? widget.item!.lastWorn!
+                              : 'Not set',
+                        ),
+                        _ReadOnlyInfoRow(
+                          label: 'Wear Count',
+                          value: widget.item!.wearCount.toString(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               FilledButton.icon(
                 onPressed: _isSubmitting ? null : _submit,
                 icon: _isSubmitting
@@ -421,6 +481,39 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ReadOnlyInfoRow extends StatelessWidget {
+  const _ReadOnlyInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: Text(value, style: theme.textTheme.bodyMedium),
+          ),
+        ],
       ),
     );
   }

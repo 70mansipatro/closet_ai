@@ -19,20 +19,31 @@ class AuthRepository {
       'password': payload['password'],
     };
 
-    if (payload['phone'] != null) {
-      data['phone'] = payload['phone']?.trim();
+    final phone = payload['phone']?.toString().trim();
+    if (phone != null && phone.isNotEmpty) {
+      data['phone'] = phone;
     }
-    if (payload['gender'] != null) {
-      data['gender'] = payload['gender'];
+
+    final gender = payload['gender']?.toString().trim();
+    if (gender != null && gender.isNotEmpty && gender != 'prefer-not-to-say') {
+      data['gender'] = gender;
     }
-    if (payload['height'] != null) {
-      data['height'] = payload['height'];
+
+    final height = payload['height'];
+    if (height != null) {
+      data['height'] = height;
     }
-    if (payload['weight'] != null) {
-      data['weight'] = payload['weight'];
+
+    final weight = payload['weight'];
+    if (weight != null) {
+      data['weight'] = weight;
     }
-    if (payload['preferredStyle'] != null) {
-      data['preferredStyle'] = payload['preferredStyle'];
+
+    final preferredStyle = payload['preferredStyle']?.toString().trim();
+    if (preferredStyle != null &&
+        preferredStyle.isNotEmpty &&
+        preferredStyle != 'casual') {
+      data['preferredStyle'] = preferredStyle;
     }
 
     return _apiClient.post('/auth/register', data: data);

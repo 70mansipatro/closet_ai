@@ -36,16 +36,25 @@ const normalizePayload = (payload = {}) => {
     normalized.lastWorn = new Date(normalized.lastWorn);
   }
 
-  if (normalized.category && !allowedCategories.includes(normalized.category)) {
-    throw new AppError('Invalid category', 400);
+  if (normalized.category) {
+    normalized.category = normalized.category.toString().trim().toLowerCase();
+    if (!allowedCategories.includes(normalized.category)) {
+      throw new AppError('Invalid category', 400);
+    }
   }
 
-  if (normalized.season && !allowedSeasons.includes(normalized.season)) {
-    throw new AppError('Invalid season', 400);
+  if (normalized.season) {
+    normalized.season = normalized.season.toString().trim().toLowerCase();
+    if (!allowedSeasons.includes(normalized.season)) {
+      throw new AppError('Invalid season', 400);
+    }
   }
 
-  if (normalized.laundryStatus && !allowedLaundryStatuses.includes(normalized.laundryStatus)) {
-    throw new AppError('Invalid laundry status', 400);
+  if (normalized.laundryStatus) {
+    normalized.laundryStatus = normalized.laundryStatus.toString().trim().toLowerCase();
+    if (!allowedLaundryStatuses.includes(normalized.laundryStatus)) {
+      throw new AppError('Invalid laundry status', 400);
+    }
   }
 
   return normalized;

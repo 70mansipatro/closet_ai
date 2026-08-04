@@ -6,16 +6,22 @@ import {
   getOutfit,
   updateOutfit,
   deleteOutfit,
+  generateOutfit,
+  favoriteOutfit,
   aiGenerateOutfits,
+  wearOutfit,
 } from '../controllers/outfit.controller.js';
 
 const router = express.Router();
 
-router.post('/', protect, createOutfit);
+router.post('/generate', protect, generateOutfit);
+router.post('/save', protect, createOutfit);
+router.post('/wear', protect, wearOutfit);
 router.get('/', protect, listOutfits);
+router.put('/favorite', protect, favoriteOutfit);
 router.get('/:id', protect, getOutfit);
-router.put('/:id', protect, updateOutfit);
 router.delete('/:id', protect, deleteOutfit);
+router.put('/:id', protect, updateOutfit);
 router.post('/ai-generate', protect, aiGenerateOutfits);
 
 export default router;

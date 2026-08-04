@@ -1,15 +1,39 @@
-import Outfit from '../models/Outfit.js';
+import { AppError } from '../utils/appError.js';
+import { generateOutfitRecommendation } from '../services/outfit.service.js';
+import { createOutfitSchema, updateOutfitSchema, generateOutfitSchema } from '../validators/outfit.validator.js';
+import {
+  createOutfitRecord,
+  deleteOutfitRecord,
+  findOutfitById,
+  findOutfitsForUser,
+  updateOutfitRecord,
+} from '../repositories/outfit.repository.js';
 import Clothing from '../models/Clothing.js';
-import { createOutfitSchema, updateOutfitSchema } from '../validators/outfit.validator.js';
-import { generateOutfitSuggestions } from '../services/ai.service.js';
+
+const normalizeLaundryStatus = (value) => (value ?? '').toString().trim().toLowerCase();
 
 export const createOutfit = async (req, res, next) => {
   try {
-    const { error, value } = createOutfitSchema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
+    const payload = { ...(req.body || {}) };
+    for (const field of ['outerwear', 'accessories', 'bag', 'watch']) {
+      if (payload[field] === null || payload[field] === undefined) payload[field] = '';
+    }
 
-    const outfit = await Outfit.create({ ...value, owner: req.user._id });
-    res.status(201).json(outfit);
+    const { error, value } = createOutfitSchema.validate(payload);
+    if (error) throw new AppError(error.details[0].message, 400);
+
+    const savePayload = {
+      ...value,
+      userId: req.user?._id || req.user?.userId,
+      recommendedItems: Array.isArray(value.recommendedItems) && value.recommendedItems.length > 0
+        ? value.recommendedItems
+        : [value.top, value.bottom, value.footwear].filter(Boolean).map((name) => ({ _id: '', name, category: 'Item' })),
+    };
+
+    console.log('[OUTFIT] Save payload', { savePayload });
+
+    const outfit = await createOutfitRecord({ payload: savePayload });
+    res.status(201).json({ success: true, data: outfit });
   } catch (error) {
     next(error);
   }
@@ -17,8 +41,14 @@ export const createOutfit = async (req, res, next) => {
 
 export const listOutfits = async (req, res, next) => {
   try {
-    const outfits = await Outfit.find({ owner: req.user._id }).populate('items').sort({ createdAt: -1 });
-    res.json(outfits);
+    const { favorite, search } = req.query;
+    const outfits = await findOutfitsForUser({
+      userId: req.user._id,
+      favorite: favorite === undefined ? undefined : favorite === 'true',
+      search,
+    });
+
+    res.status(200).json({ success: true, data: outfits });
   } catch (error) {
     next(error);
   }
@@ -26,9 +56,9 @@ export const listOutfits = async (req, res, next) => {
 
 export const getOutfit = async (req, res, next) => {
   try {
-    const outfit = await Outfit.findOne({ _id: req.params.id, owner: req.user._id }).populate('items');
-    if (!outfit) return res.status(404).json({ message: 'Outfit not found' });
-    res.json(outfit);
+    const outfit = await findOutfitById({ userId: req.user._id, id: req.params.id });
+    if (!outfit) throw new AppError('Outfit not found', 404);
+    res.status(200).json({ success: true, data: outfit });
   } catch (error) {
     next(error);
   }
@@ -37,14 +67,12 @@ export const getOutfit = async (req, res, next) => {
 export const updateOutfit = async (req, res, next) => {
   try {
     const { error, value } = updateOutfitSchema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
+    if (error) throw new AppError(error.details[0].message, 400);
 
-    const outfit = await Outfit.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!outfit) return res.status(404).json({ message: 'Outfit not found' });
+    const outfit = await updateOutfitRecord({ userId: req.user._id, id: req.params.id, updateData: value });
+    if (!outfit) throw new AppError('Outfit not found', 404);
 
-    Object.assign(outfit, value);
-    await outfit.save();
-    res.json(outfit);
+    res.status(200).json({ success: true, data: outfit });
   } catch (error) {
     next(error);
   }
@@ -52,24 +80,112 @@ export const updateOutfit = async (req, res, next) => {
 
 export const deleteOutfit = async (req, res, next) => {
   try {
-    const outfit = await Outfit.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!outfit) return res.status(404).json({ message: 'Outfit not found' });
-
-    await outfit.deleteOne();
-    res.json({ message: 'Outfit deleted successfully' });
+    const outfit = await deleteOutfitRecord({ userId: req.user._id, id: req.params.id });
+    if (!outfit) throw new AppError('Outfit not found', 404);
+    res.status(200).json({ success: true, message: 'Outfit deleted successfully' });
   } catch (error) {
     next(error);
   }
 };
 
-export const aiGenerateOutfits = async (req, res, next) => {
+export const generateOutfit = async (req, res, next) => {
   try {
-    const { season, occasion, userStyle } = req.body;
-    const wardrobe = await Clothing.find({ owner: req.user._id }).lean();
-    const wardrobeSummary = wardrobe.map((item) => `${item.category}:${item.color || 'none'}`).join(', ');
-    const suggestions = await generateOutfitSuggestions({ season, occasion, wardrobeSummary, userStyle });
-    res.json({ suggestions });
+    const { error, value } = generateOutfitSchema.validate(req.body);
+    if (error) throw new AppError(error.details[0].message, 400);
+
+    const userId = req.user?._id || req.user?.userId;
+    console.log('[OUTFIT] Authenticated user', { userId });
+
+    const wardrobe = await Clothing.find({
+      userId,
+      isDeleted: { $ne: true },
+      deleted: { $ne: true },
+      deletedAt: { $exists: false },
+    }).lean();
+
+    const dirtyItems = wardrobe.filter((item) => normalizeLaundryStatus(item?.laundryStatus) === 'dirty');
+    const cleanItems = wardrobe.filter((item) => !dirtyItems.includes(item) && !item.isDeleted && !item.deleted && !item.deletedAt);
+
+    console.log('[OUTFIT] Total clothes', { count: wardrobe.length });
+    console.log('[OUTFIT] Clean clothes', { count: cleanItems.length });
+    console.log('[OUTFIT] Dirty clothes', { count: dirtyItems.length });
+    console.log('[OUTFIT] Grouped categories', {
+      counts: Object.entries(
+        wardrobe.reduce((acc, item) => {
+          const category = (item?.category || 'other').toString();
+          acc[category] = (acc[category] || 0) + 1;
+          return acc;
+        }, {}),
+      ).map(([key, count]) => ({ category: key, count })),
+    });
+    console.log('[OUTFIT] Wardrobe JSON', { wardrobe });
+
+    const recommendation = await generateOutfitRecommendation({ wardrobe: cleanItems.length > 0 ? cleanItems : wardrobe, request: value });
+    res.status(200).json({ success: true, data: recommendation });
   } catch (error) {
     next(error);
   }
 };
+
+export const wearOutfit = async (req, res, next) => {
+  try {
+    const { outfitId } = req.body || {};
+    if (!outfitId) {
+      throw new AppError('outfitId is required', 400);
+    }
+
+    const outfit = await findOutfitById({ userId: req.user._id, id: outfitId });
+    if (!outfit) {
+      throw new AppError('Outfit not found', 404);
+    }
+
+    const itemIds = (outfit.recommendedItems || [])
+      .map((item) => item?._id)
+      .filter(Boolean);
+
+    const now = new Date();
+    const result = itemIds.length > 0
+      ? await Clothing.updateMany(
+          { _id: { $in: itemIds }, userId: req.user._id },
+          { $set: { lastWorn: now }, $inc: { wearCount: 1 } },
+        )
+      : { matchedCount: 0, modifiedCount: 0 };
+
+    console.log('[OUTFIT] Wear API payload', { outfitId, itemIds, now: now.toISOString() });
+    console.log('[OUTFIT] Updated lastWorn', { outfitId, lastWorn: now.toISOString(), updatedCount: result.modifiedCount || result.matchedCount || 0 });
+    console.log('[OUTFIT] Updated wearCount', { outfitId, updatedCount: result.modifiedCount || result.matchedCount || 0 });
+
+    res.status(200).json({
+      success: true,
+      message: 'Outfit marked as worn.',
+      data: {
+        outfitId,
+        updatedCount: result.modifiedCount || result.matchedCount || 0,
+        lastWorn: now.toISOString(),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const favoriteOutfit = async (req, res, next) => {
+  try {
+    const { id, favorite } = req.body || {};
+    if (!id) throw new AppError('Outfit id is required', 400);
+
+    const outfit = await updateOutfitRecord({
+      userId: req.user._id,
+      id,
+      updateData: { favorite: Boolean(favorite) },
+    });
+
+    if (!outfit) throw new AppError('Outfit not found', 404);
+
+    res.status(200).json({ success: true, data: outfit });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const aiGenerateOutfits = generateOutfit;

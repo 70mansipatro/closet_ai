@@ -36,7 +36,7 @@ export const findClothingItems = async ({
   if (brand) query.brand = { $regex: brand, $options: 'i' };
   if (season) query.season = season;
   if (occasion) query.occasion = { $regex: occasion, $options: 'i' };
-  if (laundryStatus) query.laundryStatus = laundryStatus;
+  if (laundryStatus) query.laundryStatus = laundryStatus.toString().trim().toLowerCase();
   if (favorite !== undefined) query.favorite = favorite === 'true' || favorite === true;
 
   const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
