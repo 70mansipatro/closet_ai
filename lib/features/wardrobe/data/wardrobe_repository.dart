@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:closet_ai/core/constants/app_constants.dart';
 import 'package:dio/dio.dart';
@@ -181,7 +180,7 @@ class WardrobeRepository {
   }) async {
     final formData = FormData();
     final String endpoint = '/clothes/analyze';
-    final String? imageName = imageFile?.uri.pathSegments.last ?? 'upload.jpg';
+    final String imageName = imageFile?.uri.pathSegments.last ?? 'upload.jpg';
     final int? imageSize = imageFile?.lengthSync() ?? imageBytes?.length;
 
     debugPrint('[ANALYZE] API URL: ${_dio.options.baseUrl}$endpoint');
