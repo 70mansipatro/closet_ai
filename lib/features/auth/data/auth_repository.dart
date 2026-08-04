@@ -35,10 +35,7 @@ class AuthRepository {
       data['preferredStyle'] = payload['preferredStyle'];
     }
 
-    return _apiClient.post(
-      '/auth/register',
-      data: data,
-    );
+    return _apiClient.post('/auth/register', data: data);
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) {
