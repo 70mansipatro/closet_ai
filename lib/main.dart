@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/services/notification_service.dart';
 
 import 'core/config/app_router.dart';
 import 'core/config/app_theme.dart';
@@ -20,9 +21,11 @@ class _ClosetAiAppState extends ConsumerState<ClosetAiApp> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(authControllerProvider.notifier).initialize(),
-    );
+    Future.microtask(() async {
+      await initializeTimezones();
+      await NotificationService().initialize();
+      return ref.read(authControllerProvider.notifier).initialize();
+    });
   }
 
   @override

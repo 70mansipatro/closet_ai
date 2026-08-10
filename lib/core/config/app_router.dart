@@ -13,6 +13,12 @@ import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/calendar/presentation/pages/calendar_page.dart';
+import '../../features/calendar/presentation/pages/monthly_calendar_page.dart';
+import '../../features/calendar/presentation/pages/weekly_calendar_page.dart';
+import '../../features/calendar/presentation/pages/day_details_page.dart';
+import '../../features/calendar/presentation/pages/schedule_outfit_page.dart';
+import '../../features/history/presentation/pages/wear_history_page.dart';
+import '../../features/history/presentation/pages/outfit_history_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/laundry/presentation/pages/laundry_page.dart';
 import '../../features/packing/presentation/pages/packing_page.dart';
@@ -119,6 +125,39 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/calendar',
           builder: (context, state) => const CalendarPage(),
+        ),
+        GoRoute(
+          path: '/calendar/monthly',
+          builder: (context, state) => const MonthlyCalendarPage(),
+        ),
+        GoRoute(
+          path: '/calendar/weekly',
+          builder: (context, state) => const WeeklyCalendarPage(),
+        ),
+        GoRoute(
+          path: '/calendar/schedule',
+          builder: (context, state) => const ScheduleOutfitPage(),
+        ),
+        GoRoute(
+          path: '/calendar/day',
+          builder: (context, state) {
+            final dateStr =
+                state.uri.queryParameters['date'] ??
+                DateTime.now().toIso8601String();
+            final date = DateTime.tryParse(dateStr) ?? DateTime.now();
+            return DayDetailsPage(date: date);
+          },
+        ),
+        GoRoute(
+          path: '/history/wear',
+          builder: (context, state) => const WearHistoryPage(),
+        ),
+        GoRoute(
+          path: '/history/outfit',
+          builder: (context, state) {
+            final id = state.uri.queryParameters['id'] ?? '';
+            return OutfitHistoryPage(outfitId: id);
+          },
         ),
         GoRoute(
           path: '/subscription',
