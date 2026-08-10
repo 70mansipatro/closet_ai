@@ -1,13 +1,23 @@
-import Trip from '../models/Trip.js';
+import { AppError } from '../utils/appError.js';
 import { createTripSchema, updateTripSchema } from '../validators/trip.validator.js';
+import { createTrip, deleteTrip, findTripById, findTripsForUser, updateTrip } from '../repositories/trip.repository.js';
+import {
+  addManualPackingItem,
+  deletePackingItem as deletePackingItemService,
+  generatePackingList,
+  listPackingList,
+  togglePackingItem,
+  updatePackingItem as updatePackingItemService,
+} from '../services/packing.service.js';
+import { generateTripOutfits } from '../services/trip.service.js';
 
-export const createTrip = async (req, res, next) => {
+export const createTripHandler = async (req, res, next) => {
   try {
     const { error, value } = createTripSchema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
+    if (error) throw new AppError(error.details[0].message, 400);
 
-    const trip = await Trip.create({ ...value, owner: req.user._id });
-    res.status(201).json(trip);
+    const trip = await createTrip({ payload: { ...value, owner: req.user._id } });
+    res.status(201).json({ success: true, data: trip });
   } catch (error) {
     next(error);
   }
@@ -15,8 +25,17 @@ export const createTrip = async (req, res, next) => {
 
 export const listTrips = async (req, res, next) => {
   try {
-    const trips = await Trip.find({ owner: req.user._id }).sort({ startDate: 1 });
-    res.json(trips);
+    const { search, status, sortBy, sortOrder, page, limit } = req.query;
+    const result = await findTripsForUser({
+      userId: req.user._id,
+      search: search?.toString(),
+      status: status?.toString(),
+      sortBy: sortBy?.toString() || 'startDate',
+      sortOrder: sortOrder?.toString() || 'asc',
+      page: Number(page) || 1,
+      limit: Number(limit) || 50,
+    });
+    res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
   } catch (error) {
     next(error);
   }
@@ -24,81 +43,109 @@ export const listTrips = async (req, res, next) => {
 
 export const getTrip = async (req, res, next) => {
   try {
-    const trip = await Trip.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!trip) return res.status(404).json({ message: 'Trip not found' });
-    res.json(trip);
+    const trip = await findTripById({ userId: req.user._id, id: req.params.id });
+    if (!trip) throw new AppError('Trip not found', 404);
+    res.status(200).json({ success: true, data: trip });
   } catch (error) {
     next(error);
   }
 };
 
-export const updateTrip = async (req, res, next) => {
+export const updateTripHandler = async (req, res, next) => {
   try {
     const { error, value } = updateTripSchema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
+    if (error) throw new AppError(error.details[0].message, 400);
 
-    const trip = await Trip.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!trip) return res.status(404).json({ message: 'Trip not found' });
-
-    Object.assign(trip, value);
-    await trip.save();
-    res.json(trip);
+    const trip = await updateTrip({ userId: req.user._id, id: req.params.id, updateData: value });
+    if (!trip) throw new AppError('Trip not found', 404);
+    res.status(200).json({ success: true, data: trip });
   } catch (error) {
     next(error);
   }
 };
 
-export const deleteTrip = async (req, res, next) => {
+export const deleteTripHandler = async (req, res, next) => {
   try {
-    const trip = await Trip.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!trip) return res.status(404).json({ message: 'Trip not found' });
-
-    await trip.deleteOne();
-    res.json({ message: 'Trip deleted successfully' });
+    const trip = await deleteTrip({ userId: req.user._id, id: req.params.id });
+    if (!trip) throw new AppError('Trip not found', 404);
+    res.status(200).json({ success: true, message: 'Trip deleted successfully' });
   } catch (error) {
     next(error);
   }
 };
 
-export const addPackingItem = async (req, res, next) => {
+export const generatePacking = async (req, res, next) => {
   try {
-    const trip = await Trip.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!trip) return res.status(404).json({ message: 'Trip not found' });
-
-    trip.packingList.push({ item: req.body.item, packed: false, category: req.body.category || 'other' });
-    await trip.save();
-    res.status(201).json(trip.packingList);
+    const result = await generatePackingList({ userId: req.user._id, tripId: req.params.id });
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
 };
 
-export const updatePackingItem = async (req, res, next) => {
+export const getPacking = async (req, res, next) => {
   try {
-    const trip = await Trip.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!trip) return res.status(404).json({ message: 'Trip not found' });
-
-    const item = trip.packingList.id(req.params.itemId);
-    if (!item) return res.status(404).json({ message: 'Packing list item not found' });
-
-    item.packed = req.body.packed ?? item.packed;
-    item.item = req.body.item ?? item.item;
-    item.category = req.body.category ?? item.category;
-    await trip.save();
-    res.json(item);
+    const packing = await listPackingList({ userId: req.user._id, tripId: req.params.id });
+    res.status(200).json({ success: true, data: packing });
   } catch (error) {
     next(error);
   }
 };
 
-export const deletePackingItem = async (req, res, next) => {
+export const addPackingItemHandler = async (req, res, next) => {
   try {
-    const trip = await Trip.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+    const item = await addManualPackingItem({ userId: req.user._id, tripId: req.params.id, payload: req.body });
+    res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    trip.packingList.id(req.params.itemId)?.deleteOne();
-    await trip.save();
-    res.json({ message: 'Packing item deleted successfully' });
+export const updatePackingItemHandler = async (req, res, next) => {
+  try {
+    const item = await updatePackingItemService({
+      userId: req.user._id,
+      tripId: req.params.id,
+      itemId: req.params.itemId,
+      updateData: req.body,
+    });
+    res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deletePackingItemHandler = async (req, res, next) => {
+  try {
+    await deletePackingItemService({ userId: req.user._id, tripId: req.params.id, itemId: req.params.itemId });
+    res.status(200).json({ success: true, message: 'Packing item deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const togglePackingItemHandler = async (req, res, next) => {
+  try {
+    const item = await togglePackingItem({ userId: req.user._id, tripId: req.params.id, itemId: req.params.itemId });
+    res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const regeneratePackingHandler = async (req, res, next) => {
+  try {
+    const result = await generatePackingList({ userId: req.user._id, tripId: req.params.id });
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const generateTripOutfitsHandler = async (req, res, next) => {
+  try {
+    const result = await generateTripOutfits({ userId: req.user._id, tripId: req.params.id });
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

@@ -29,9 +29,13 @@ class LaundryRepository {
       if (occasion != null && occasion.isNotEmpty) 'occasion': occasion,
       if (laundryStatus != null && laundryStatus.isNotEmpty)
         'laundryStatus': laundryStatus,
-      if (sortBy != null) 'sortBy': sortBy,
-      if (sortOrder != null) 'sortOrder': sortOrder,
     };
+    if (sortBy != null) {
+      query['sortBy'] = sortBy;
+    }
+    if (sortOrder != null) {
+      query['sortOrder'] = sortOrder;
+    }
     return _apiClient.getWithQuery('/laundry', query: query);
   }
 

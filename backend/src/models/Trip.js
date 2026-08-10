@@ -2,24 +2,33 @@ import mongoose from 'mongoose';
 
 const tripSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, trim: true, maxlength: 100 },
+    tripName: { type: String, required: true, trim: true, maxlength: 100, alias: 'title' },
     destination: { type: String, required: true, trim: true, maxlength: 100 },
+    country: { type: String, required: true, trim: true, maxlength: 100 },
+    city: { type: String, required: true, trim: true, maxlength: 100 },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    packingList: [
-      {
-        item: { type: String, required: true, trim: true },
-        packed: { type: Boolean, default: false },
-        category: { type: String, trim: true, default: 'other' },
-      },
-    ],
-    notes: { type: String, maxlength: 2000 },
+    activities: { type: [String], default: [] },
+    notes: { type: String, maxlength: 2000, default: '' },
+    weatherSummary: { type: String, maxlength: 500, default: '' },
+    averageTemperature: { type: Number, default: null },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+      alias: 'userId',
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 tripSchema.index({ owner: 1, startDate: 1 });
+tripSchema.index({ tripName: 'text', destination: 'text', country: 'text', city: 'text', activities: 'text' });
 
 const Trip = mongoose.model('Trip', tripSchema);
 export default Trip;

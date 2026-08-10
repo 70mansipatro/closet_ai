@@ -102,23 +102,29 @@ export const normalizeAnalysis = (analysis = {}) => ({
   occasion: typeof analysis.occasion === 'string' && analysis.occasion.trim() ? analysis.occasion.trim() : 'casual',
 });
 
-const buildGeminiRequestBody = (prompt, buffer) => ({
-  contents: [
-    {
-      parts: [
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: buffer.toString('base64'),
-          },
-        },
-      ],
-    },
-  ],
-});
+export const buildGeminiRequestBody = (prompt, buffer = null) => {
+  const part = { text: prompt };
+  const parts = [part];
 
-const validateGeminiModel = (model) => {
+  if (buffer) {
+    parts.push({
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: buffer.toString('base64'),
+      },
+    });
+  }
+
+  return {
+    contents: [
+      {
+        parts,
+      },
+    ],
+  };
+};
+
+export const validateGeminiModel = (model) => {
   if (typeof model !== 'string' || model.trim().length === 0) {
     throw new AppError('Gemini model is not configured', 500, { model });
   }

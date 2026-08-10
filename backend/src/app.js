@@ -13,6 +13,7 @@ import clothingRoutes from './routes/clothing.routes.js';
 import laundryRoutes from './routes/laundry.routes.js';
 import outfitRoutes from './routes/outfit.routes.js';
 import tripRoutes from './routes/trip.routes.js';
+import weatherRoutes from './routes/weather.routes.js';
 import calendarRoutes from './routes/calendar.routes.js';
 import historyRoutes from './routes/history.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -179,6 +180,7 @@ app.post('/api/ai/analyze', aiAnalyzeRequestLogger, protect, uploadSingle, analy
 app.post('/api/clothing/analyze', aiAnalyzeRequestLogger, protect, uploadSingle, analyzeClothing);
 app.use('/api/outfits', outfitRoutes);
 app.use('/api/trips', tripRoutes);
+app.use('/api/weather', weatherRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/laundry', laundryRoutes);
 app.use('/api/history', historyRoutes);

@@ -119,6 +119,11 @@ final appRouter = GoRouter(
           builder: (context, state) => const PackingPage(),
         ),
         GoRoute(
+          path: '/packing/:tripId',
+          builder: (context, state) =>
+              PackingPage(tripId: state.pathParameters['tripId']),
+        ),
+        GoRoute(
           path: '/laundry',
           builder: (context, state) => const LaundryPage(),
         ),
