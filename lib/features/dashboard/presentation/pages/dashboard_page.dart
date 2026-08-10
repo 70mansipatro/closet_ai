@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -9,16 +10,17 @@ class DashboardPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Dashboard')),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: const [
-          _FeatureCard(
+        children: [
+          const _FeatureCard(
             title: 'Today’s outfit',
             subtitle: 'Smart recommendation ready',
           ),
           _FeatureCard(
             title: 'Laundry reminder',
             subtitle: '3 items need attention',
+            onTap: () => context.go('/laundry'),
           ),
-          _FeatureCard(
+          const _FeatureCard(
             title: 'Packing list',
             subtitle: 'Weekend trip prepared',
           ),
@@ -29,19 +31,23 @@ class DashboardPage extends StatelessWidget {
 }
 
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.title, required this.subtitle});
+  const _FeatureCard({required this.title, required this.subtitle, this.onTap});
 
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
+      child: InkWell(
+        onTap: onTap,
+        child: ListTile(
+          title: Text(title),
+          subtitle: Text(subtitle),
+          trailing: const Icon(Icons.chevron_right),
+        ),
       ),
     );
   }

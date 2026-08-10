@@ -16,7 +16,7 @@ const clothingSchemaFields = {
   purchaseDate: Joi.date().optional(),
   purchasePrice: Joi.number().min(0).optional(),
   favorite: Joi.boolean().optional(),
-  laundryStatus: Joi.string().valid('clean', 'in-use', 'dirty', 'washing', 'repair').optional().allow(''),
+  laundryStatus: Joi.string().valid('clean', 'dirty', 'washing', 'drying', 'ironing', 'ready', 'in-use', 'repair').optional().allow(''),
   wearCount: Joi.number().integer().min(0).optional(),
   lastWorn: Joi.date().optional(),
   notes: Joi.string().max(1000).optional().allow(''),

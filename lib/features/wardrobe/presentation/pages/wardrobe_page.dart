@@ -932,6 +932,34 @@ class FilterSheetState extends State<FilterSheet> {
                     .toList(),
               ),
               const SizedBox(height: 12),
+              const Text('Laundry Status'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    [
+                      'clean',
+                      'ready',
+                      'dirty',
+                      'washing',
+                      'drying',
+                      'ironing',
+                      'in-use',
+                      'repair',
+                    ].map((value) {
+                      return ChoiceChip(
+                        label: Text(value),
+                        selected: _laundryStatus == value,
+                        onSelected: (_) => setState(
+                          () => _laundryStatus = _laundryStatus == value
+                              ? null
+                              : value,
+                        ),
+                      );
+                    }).toList(),
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: _brandController,
                 decoration: const InputDecoration(

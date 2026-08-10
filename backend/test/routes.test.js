@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 
 test('routes files exist', () => {
-  const routeFiles = ['calendar.routes.js', 'history.routes.js', 'outfit.routes.js'];
+  const routeFiles = ['calendar.routes.js', 'history.routes.js', 'outfit.routes.js', 'laundry.routes.js'];
   const routesDir = path.resolve('./src/routes');
   for (const file of routeFiles) {
     const exists = fs.existsSync(path.join(routesDir, file));

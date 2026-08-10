@@ -10,6 +10,7 @@ import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/auth.routes.js';
 import { swaggerDefinition } from './docs/swagger.js';
 import clothingRoutes from './routes/clothing.routes.js';
+import laundryRoutes from './routes/laundry.routes.js';
 import outfitRoutes from './routes/outfit.routes.js';
 import tripRoutes from './routes/trip.routes.js';
 import calendarRoutes from './routes/calendar.routes.js';
@@ -179,6 +180,7 @@ app.post('/api/clothing/analyze', aiAnalyzeRequestLogger, protect, uploadSingle,
 app.use('/api/outfits', outfitRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/laundry', laundryRoutes);
 app.use('/api/history', historyRoutes);
 
 const listRoutes = () => {

@@ -11,6 +11,7 @@ import {
 import Clothing from '../models/Clothing.js';
 
 const normalizeLaundryStatus = (value) => (value ?? '').toString().trim().toLowerCase();
+const UNAVAILABLE_LAUNDRY_STATUSES = new Set(['dirty', 'washing', 'repair', 'in-use', 'drying', 'ironing']);
 
 export const createOutfit = async (req, res, next) => {
   try {
@@ -103,8 +104,10 @@ export const generateOutfit = async (req, res, next) => {
       deletedAt: { $exists: false },
     }).lean();
 
-    const dirtyItems = wardrobe.filter((item) => normalizeLaundryStatus(item?.laundryStatus) === 'dirty');
-    const cleanItems = wardrobe.filter((item) => !dirtyItems.includes(item) && !item.isDeleted && !item.deleted && !item.deletedAt);
+    const dirtyItems = wardrobe.filter((item) => UNAVAILABLE_LAUNDRY_STATUSES.has(normalizeLaundryStatus(item?.laundryStatus)));
+    const cleanItems = wardrobe.filter(
+      (item) => !dirtyItems.includes(item) && !item.isDeleted && !item.deleted && !item.deletedAt,
+    );
 
     console.log('[OUTFIT] Total clothes', { count: wardrobe.length });
     console.log('[OUTFIT] Clean clothes', { count: cleanItems.length });

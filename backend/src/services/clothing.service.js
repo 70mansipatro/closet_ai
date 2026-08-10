@@ -11,7 +11,7 @@ const allowedCategories = [
 ];
 
 const allowedSeasons = ['spring', 'summer', 'autumn', 'winter', 'all-season'];
-const allowedLaundryStatuses = ['clean', 'in-use', 'dirty', 'washing', 'repair'];
+const allowedLaundryStatuses = ['clean', 'dirty', 'washing', 'drying', 'ironing', 'ready', 'in-use', 'repair'];
 
 const normalizePayload = (payload = {}) => {
   const normalized = { ...payload };
