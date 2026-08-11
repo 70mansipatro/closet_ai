@@ -18,7 +18,9 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
   @override
   void initState() {
     super.initState();
-    _applyFilter('this_month');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _applyFilter('this_month');
+    });
   }
 
   void _applyFilter(String filter) {
