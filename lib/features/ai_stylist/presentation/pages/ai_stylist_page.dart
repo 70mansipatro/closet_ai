@@ -1,4 +1,5 @@
 import 'package:closet_ai/features/ai_stylist/data/chat_repository.dart';
+import 'package:closet_ai/features/subscription/presentation/widgets/premium_feature_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -246,6 +247,11 @@ class _AiStylistPageState extends ConsumerState<AiStylistPage> {
                         Text(
                           'Ask about outfits, weather, laundry, packing, and wardrobe ideas.',
                           textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        const PremiumFeatureLock(
+                          title: 'AI Stylist',
+                          subtitle: 'Premium feature',
                         ),
                       ],
                     ),

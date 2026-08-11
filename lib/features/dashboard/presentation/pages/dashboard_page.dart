@@ -1,3 +1,4 @@
+import 'package:closet_ai/features/subscription/presentation/widgets/premium_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,6 +12,7 @@ class DashboardPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const PremiumBanner(),
           const _FeatureCard(
             title: 'Today’s outfit',
             subtitle: 'Smart recommendation ready',

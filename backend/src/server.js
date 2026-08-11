@@ -17,12 +17,14 @@ console.log('Cloudinary credentials available in server:', {
 
 const { default: app } = await import('./app.js');
 const { connectDatabase } = await import('./config/database.js');
+const { bootstrapSubscriptionPlans } = await import('./services/subscriptionService.js');
 
 const port = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
     await connectDatabase();
+    await bootstrapSubscriptionPlans();
 
     app.listen(port, '0.0.0.0', () => {
       console.log(`ClosetAI backend listening on http://localhost:${port}`);

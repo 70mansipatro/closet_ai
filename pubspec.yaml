@@ -50,7 +50,8 @@ dependencies:
   share_plus: ^10.0.0
   connectivity_plus: ^6.0.0
   logger: ^2.0.0
-  fl_chart: ^0.60.0
+  fl_chart: ^0.69.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

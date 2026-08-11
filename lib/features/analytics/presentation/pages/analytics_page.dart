@@ -1,3 +1,4 @@
+import 'package:closet_ai/features/subscription/presentation/widgets/premium_feature_lock.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -179,6 +180,11 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) =>
                   Center(child: Text('Unable to load overview: $error')),
+            ),
+            const SizedBox(height: 16),
+            const PremiumFeatureLock(
+              title: 'Advanced Analytics',
+              subtitle: 'Premium feature',
             ),
             const SizedBox(height: 16),
             wearAsync.when(

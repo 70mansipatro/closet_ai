@@ -26,6 +26,7 @@ import '../../features/laundry/presentation/pages/laundry_page.dart';
 import '../../features/packing/presentation/pages/packing_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
+import '../../features/subscription/presentation/pages/subscription_success_page.dart';
 import '../../features/trip/presentation/pages/trip_page.dart';
 import '../../features/wardrobe/domain/wardrobe_item.dart';
 import '../../features/wardrobe/presentation/pages/wardrobe_form_page.dart';
@@ -176,6 +177,17 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/subscription',
+          builder: (context, state) => const SubscriptionPage(),
+        ),
+        GoRoute(
+          path: '/subscription/success',
+          builder: (context, state) {
+            final planName = state.extra as String? ?? 'Premium';
+            return SubscriptionSuccessPage(planName: planName);
+          },
+        ),
+        GoRoute(
+          path: '/subscription/manage',
           builder: (context, state) => const SubscriptionPage(),
         ),
         GoRoute(

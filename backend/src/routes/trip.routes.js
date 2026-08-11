@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
+import { checkFeatureLimit } from '../middleware/featureLimit.js';
 import {
   addPackingItemHandler,
   createTripHandler,
@@ -63,7 +64,7 @@ const router = express.Router();
  *       201:
  *         description: Trip created successfully
  */
-router.post('/', protect, createTripHandler);
+router.post('/', protect, checkFeatureLimit('trip'), createTripHandler);
 
 /**
  * @swagger
@@ -204,7 +205,7 @@ router.delete('/:id', protect, deleteTripHandler);
  *       200:
  *         description: Packing list generated successfully
  */
-router.post('/:id/packing/generate', protect, generatePacking);
+router.post('/:id/packing/generate', protect, checkFeatureLimit('trip'), generatePacking);
 
 /**
  * @swagger

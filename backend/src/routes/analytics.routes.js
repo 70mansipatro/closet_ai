@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
+import { requirePremium } from '../middleware/requirePremium.js';
 import {
   overview,
   wardrobe,
@@ -26,10 +27,10 @@ router.get('/categories', protect, categories);
 router.get('/colors', protect, colors);
 router.get('/brands', protect, brands);
 router.get('/laundry', protect, laundry);
-router.get('/cost-per-wear', protect, costPerWear);
-router.get('/sustainability', protect, sustainability);
+router.get('/cost-per-wear', protect, requirePremium, costPerWear);
+router.get('/sustainability', protect, requirePremium, sustainability);
 router.get('/trends', protect, trends);
 router.get('/unused-items', protect, unusedItems);
-router.get('/insights', protect, insights);
+router.get('/insights', protect, requirePremium, insights);
 
 export default router;

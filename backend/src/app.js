@@ -18,6 +18,7 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import calendarRoutes from './routes/calendar.routes.js';
 import historyRoutes from './routes/history.routes.js';
 import chatRoutes from './routes/chat.routes.js';
+import subscriptionRoutes from './routes/subscription.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { isDatabaseConnected } from './config/database.js';
 import { protect } from './middleware/auth.js';
@@ -188,6 +189,7 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/laundry', laundryRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 const listRoutes = () => {
   const stack = app._router?.stack || app.router?.stack || [];

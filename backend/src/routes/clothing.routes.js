@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
+import { checkFeatureLimit } from '../middleware/featureLimit.js';
 import { uploadSingle } from '../middleware/upload.js';
 import {
   createClothing,
@@ -12,7 +13,7 @@ import {
 
 const router = express.Router();
 
-router.post('/', protect, uploadSingle, createClothing);
+router.post('/', protect, checkFeatureLimit('wardrobe'), uploadSingle, createClothing);
 router.post('/analyze', protect, uploadSingle, analyzeClothing);
 router.get('/', protect, listClothing);
 router.get('/:id', protect, getClothing);

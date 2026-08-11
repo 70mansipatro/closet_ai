@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
+import { checkFeatureLimit } from '../middleware/featureLimit.js';
 import {
   createOutfit,
   listOutfits,
@@ -14,7 +15,7 @@ import {
 
 const router = express.Router();
 
-router.post('/generate', protect, generateOutfit);
+router.post('/generate', protect, checkFeatureLimit('ai_outfit'), generateOutfit);
 router.post('/save', protect, createOutfit);
 router.post('/wear', protect, wearOutfit);
 router.get('/', protect, listOutfits);
