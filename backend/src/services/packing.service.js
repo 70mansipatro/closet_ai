@@ -12,6 +12,20 @@ import {
 } from '../repositories/packing.repository.js';
 import { getWeather } from './weather.service.js';
 import { buildGeminiRequestBody, validateGeminiModel } from './clothing.service.js';
+import { cancelPackingReminder } from './reminder.service.js';
+
+const checkPackingCompletionSafely = async ({ userId, tripId }) => {
+  try {
+    const items = await findPackingForTrip({ userId, tripId });
+    const total = items.length;
+    const packedCount = items.filter((item) => item.packed).length;
+    if (total > 0 && packedCount >= total) {
+      await cancelPackingReminder({ userId, tripId });
+    }
+  } catch (error) {
+    console.error('[REMINDER HOOK] failed to check packing completion', { userId, tripId, error: error.message });
+  }
+};
 
 const parseJson = (value) => {
   if (!value || typeof value !== 'string') return null;
@@ -217,7 +231,9 @@ export const updatePackingItem = async ({ userId, tripId, itemId, updateData }) 
   if (updateData.packed !== undefined) payload.packed = Boolean(updateData.packed);
   if (updateData.required !== undefined) payload.required = Boolean(updateData.required);
   if (updateData.reason !== undefined) payload.reason = String(updateData.reason).trim();
-  return updatePackingItemRepo({ userId, tripId, id: itemId, updateData: payload });
+  const updated = await updatePackingItemRepo({ userId, tripId, id: itemId, updateData: payload });
+  if (payload.packed !== undefined) await checkPackingCompletionSafely({ userId, tripId });
+  return updated;
 };
 
 export const deletePackingItem = async ({ userId, tripId, itemId }) => {
@@ -244,5 +260,7 @@ export const addManualPackingItem = async ({ userId, tripId, payload }) => {
 export const togglePackingItem = async ({ userId, tripId, itemId }) => {
   const item = await findPackingItemById({ userId, tripId, id: itemId });
   if (!item) throw new AppError('Packing item not found', 404);
-  return updatePackingItemRepo({ userId, tripId, id: itemId, updateData: { packed: !item.packed } });
+  const updated = await updatePackingItemRepo({ userId, tripId, id: itemId, updateData: { packed: !item.packed } });
+  await checkPackingCompletionSafely({ userId, tripId });
+  return updated;
 };

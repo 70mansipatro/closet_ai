@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/api_client.dart';
 import '../data/models/admin_audit_log.dart';
 import '../data/models/admin_dashboard.dart';
+import '../data/models/admin_notification.dart';
 import '../data/models/admin_payment.dart';
 import '../data/models/admin_plan.dart';
 import '../data/models/admin_settings.dart';
@@ -215,4 +216,29 @@ final adminSettingsProvider = FutureProvider.autoDispose<AdminSettings>((
   ref,
 ) async {
   return ref.read(adminRepositoryProvider).getSettings();
+});
+
+// Notifications
+final adminNotificationsPageProvider = StateProvider<int>((ref) => 1);
+
+final adminNotificationsProvider =
+    FutureProvider.autoDispose<PaginatedResult<Map<String, dynamic>>>((ref) async {
+  final page = ref.watch(adminNotificationsPageProvider);
+  return ref.read(adminRepositoryProvider).getNotifications(page: page);
+});
+
+final adminNotificationStatsProvider = FutureProvider.autoDispose<AdminNotificationStats>((ref) async {
+  return ref.read(adminRepositoryProvider).getNotificationStats();
+});
+
+final adminAnnouncementsPageProvider = StateProvider<int>((ref) => 1);
+
+final adminAnnouncementsProvider =
+    FutureProvider.autoDispose<PaginatedResult<AdminAnnouncement>>((ref) async {
+  final page = ref.watch(adminAnnouncementsPageProvider);
+  return ref.read(adminRepositoryProvider).getAnnouncements(page: page);
+});
+
+final adminReminderStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  return ref.read(adminRepositoryProvider).getReminderStats();
 });

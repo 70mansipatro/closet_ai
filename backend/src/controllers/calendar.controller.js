@@ -12,6 +12,23 @@ import {
   deleteCalendarEntry,
 } from '../repositories/calendar.repository.js';
 import { scheduleSchema } from '../validators/calendar.validator.js';
+import { syncOutfitReminder, cancelOutfitReminder } from '../services/reminder.service.js';
+
+const syncOutfitReminderSafely = async ({ userId, calendarEntry }) => {
+  try {
+    await syncOutfitReminder({ userId, calendarEntry });
+  } catch (error) {
+    console.error('[REMINDER HOOK] failed to sync outfit reminder', { userId, error: error.message });
+  }
+};
+
+const cancelOutfitReminderSafely = async ({ userId, calendarEntryId }) => {
+  try {
+    await cancelOutfitReminder({ userId, calendarEntryId });
+  } catch (error) {
+    console.error('[REMINDER HOOK] failed to cancel outfit reminder', { userId, error: error.message });
+  }
+};
 
 export const schedule = async (req, res, next) => {
   try {
@@ -54,6 +71,7 @@ export const update = async (req, res, next) => {
     const updateData = req.body || {};
     const updated = await updateCalendarRepo({ userId: req.user._id, id, updateData });
     if (!updated) throw new AppError('Calendar entry not found', 404);
+    await syncOutfitReminderSafely({ userId: req.user._id, calendarEntry: updated });
     res.status(200).json({ success: true, data: updated });
   } catch (error) {
     next(error);
@@ -65,6 +83,7 @@ export const remove = async (req, res, next) => {
     const id = req.params.id;
     const removed = await deleteCalendarEntry({ userId: req.user._id, id });
     if (!removed) throw new AppError('Calendar entry not found', 404);
+    await cancelOutfitReminderSafely({ userId: req.user._id, calendarEntryId: id });
     res.status(200).json({ success: true, message: 'Calendar entry deleted' });
   } catch (error) {
     next(error);

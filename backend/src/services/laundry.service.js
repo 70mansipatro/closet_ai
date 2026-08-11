@@ -13,6 +13,15 @@ import {
   findClothingItems,
   updateClothingItem,
 } from '../repositories/clothing.repository.js';
+import { syncLaundryReminder } from './reminder.service.js';
+
+const syncLaundryReminderSafely = async ({ userId, clothing }) => {
+  try {
+    await syncLaundryReminder({ userId, clothing });
+  } catch (error) {
+    console.error('[REMINDER HOOK] failed to sync laundry reminder', { userId, error: error.message });
+  }
+};
 
 export const LAUNDRY_STATUSES = [
   'clean',
@@ -129,6 +138,7 @@ export const changeLaundryStatus = async ({ userId, clothingId, newStatus, metho
     });
   }
 
+  await syncLaundryReminderSafely({ userId, clothing: updated });
   return updated;
 };
 
@@ -169,6 +179,7 @@ export const washClothing = async ({ userId, clothingId, method, notes, session 
     });
   }
 
+  await syncLaundryReminderSafely({ userId, clothing: updated });
   return updated;
 };
 
@@ -198,6 +209,7 @@ export const dryClothing = async ({ userId, clothingId, method, notes, session =
     session,
   });
 
+  await syncLaundryReminderSafely({ userId, clothing: updated });
   return updated;
 };
 
@@ -227,6 +239,7 @@ export const ironClothing = async ({ userId, clothingId, method, notes, session 
     session,
   });
 
+  await syncLaundryReminderSafely({ userId, clothing: updated });
   return updated;
 };
 
@@ -279,6 +292,7 @@ export const bulkUpdateLaundryStatus = async ({ userId, clothingIds, newStatus, 
           session,
         });
       }
+      await syncLaundryReminderSafely({ userId, clothing: updated });
       success.push({ clothingId, status: normalizedStatus });
     } catch (error) {
       failed.push({ clothingId, reason: error.message || 'Failed to update' });

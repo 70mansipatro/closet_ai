@@ -4,6 +4,23 @@ import { findClothingById, updateClothingItem } from '../repositories/clothing.r
 import { createWearHistory, findUserOutfitHistoryOnDate } from '../repositories/history.repository.js';
 import { createCalendarEntry, findCalendarByDate, updateCalendarEntry } from '../repositories/calendar.repository.js';
 import Clothing from '../models/Clothing.js';
+import { syncOutfitReminder, cancelOutfitReminder } from './reminder.service.js';
+
+const syncOutfitReminderSafely = async ({ userId, calendarEntry }) => {
+  try {
+    await syncOutfitReminder({ userId, calendarEntry });
+  } catch (error) {
+    console.error('[REMINDER HOOK] failed to sync outfit reminder', { userId, error: error.message });
+  }
+};
+
+const cancelOutfitReminderSafely = async ({ userId, calendarEntryId }) => {
+  try {
+    await cancelOutfitReminder({ userId, calendarEntryId });
+  } catch (error) {
+    console.error('[REMINDER HOOK] failed to cancel outfit reminder', { userId, error: error.message });
+  }
+};
 
 const startOfDay = (d) => {
   const t = new Date(d);
@@ -14,13 +31,18 @@ const startOfDay = (d) => {
 export const scheduleOutfitForDate = async ({ userId, payload }) => {
   const date = startOfDay(payload.date || new Date());
   const existing = await findCalendarByDate({ userId, date });
+
+  let result;
   if (existing) {
     Object.assign(existing, payload);
-    return existing.save();
+    result = await existing.save();
+  } else {
+    const savePayload = { ...payload, userId, date };
+    result = await createCalendarEntry({ payload: savePayload });
   }
 
-  const savePayload = { ...payload, userId, date };
-  return createCalendarEntry({ payload: savePayload });
+  await syncOutfitReminderSafely({ userId, calendarEntry: result });
+  return result;
 };
 
 export const wearToday = async ({ userId, outfitId }) => {
@@ -69,14 +91,18 @@ export const wearToday = async ({ userId, outfitId }) => {
 
   // mark calendar entry for today as Worn
   const calendarEntry = await findCalendarByDate({ userId, date: today });
+  let wornEntryId;
   if (calendarEntry) {
     calendarEntry.status = 'Worn';
     calendarEntry.outfitId = outfitId || calendarEntry.outfitId;
     calendarEntry.updatedAt = new Date();
     await calendarEntry.save();
+    wornEntryId = calendarEntry._id;
   } else {
-    await createCalendarEntry({ payload: { userId, date: today, outfitId: outfitId || null, status: 'Worn' } });
+    const newEntry = await createCalendarEntry({ payload: { userId, date: today, outfitId: outfitId || null, status: 'Worn' } });
+    wornEntryId = newEntry._id;
   }
+  await cancelOutfitReminderSafely({ userId, calendarEntryId: wornEntryId });
 
   return { alreadyWorn: false, createdCount: created.length };
 };

@@ -47,6 +47,40 @@ class ProfilePage extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 12),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: const Text('Notifications'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/notifications'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.alarm_outlined),
+                  title: const Text('Reminders'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/reminders'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.lightbulb_outline),
+                  title: const Text('Smart Reminders'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/smart-reminders'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.tune),
+                  title: const Text('Notification Settings'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/notifications/settings'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           const Text('Account settings and preferences will appear here.'),
         ],
       ),

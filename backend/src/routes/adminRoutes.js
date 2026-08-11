@@ -29,6 +29,15 @@ import {
 import { getReportTypes, exportReport } from '../controllers/admin/adminReportController.js';
 import { getAuditLogs } from '../controllers/admin/adminAuditController.js';
 import { getSettings, updateSettings } from '../controllers/admin/adminSettingsController.js';
+import {
+  getNotifications,
+  getNotificationStats,
+  createAnnouncement,
+  listAnnouncements,
+  cancelAnnouncement,
+  getReminders,
+  getReminderStats,
+} from '../controllers/admin/adminNotificationController.js';
 
 const router = express.Router();
 
@@ -72,5 +81,13 @@ router.get('/audit-logs', requirePermission('audit.view'), getAuditLogs);
 
 router.get('/settings', requirePermission('settings.view'), getSettings);
 router.patch('/settings', requirePermission('settings.manage'), updateSettings);
+
+router.get('/notifications', requirePermission('notifications.view'), getNotifications);
+router.get('/notifications/stats', requirePermission('notifications.view'), getNotificationStats);
+router.get('/notifications/announcements', requirePermission('notifications.view'), listAnnouncements);
+router.post('/notifications/announcement', requirePermission('notifications.send'), createAnnouncement);
+router.patch('/notifications/:id/cancel', requirePermission('notifications.manage'), cancelAnnouncement);
+router.get('/reminders', requirePermission('notifications.view'), getReminders);
+router.get('/reminders/stats', requirePermission('notifications.view'), getReminderStats);
 
 export default router;

@@ -2,6 +2,7 @@ import 'package:closet_ai/core/services/api_client.dart';
 
 import '../models/admin_audit_log.dart';
 import '../models/admin_dashboard.dart';
+import '../models/admin_notification.dart';
 import '../models/admin_payment.dart';
 import '../models/admin_plan.dart';
 import '../models/admin_settings.dart';
@@ -259,5 +260,47 @@ class AdminRepository {
       data: settings.toJson(),
     );
     return AdminSettings.fromJson(_data(response));
+  }
+
+  // Notifications
+  Future<PaginatedResult<Map<String, dynamic>>> getNotifications({
+    int page = 1,
+    int limit = 20,
+    String? type,
+    String? status,
+  }) async {
+    final response = await _apiClient.getWithQuery(
+      '/admin/notifications',
+      query: _query({'page': page, 'limit': limit, 'type': type, 'status': status}),
+    );
+    return PaginatedResult.fromJson(_data(response), (item) => item);
+  }
+
+  Future<AdminNotificationStats> getNotificationStats() async {
+    final response = await _apiClient.get('/admin/notifications/stats');
+    return AdminNotificationStats.fromJson(_data(response));
+  }
+
+  Future<PaginatedResult<AdminAnnouncement>> getAnnouncements({int page = 1, int limit = 20}) async {
+    final response = await _apiClient.getWithQuery(
+      '/admin/notifications/announcements',
+      query: _query({'page': page, 'limit': limit}),
+    );
+    return PaginatedResult.fromJson(_data(response), AdminAnnouncement.fromJson);
+  }
+
+  Future<AdminAnnouncement> createAnnouncement(Map<String, dynamic> payload) async {
+    final response = await _apiClient.post('/admin/notifications/announcement', data: payload);
+    return AdminAnnouncement.fromJson(_data(response));
+  }
+
+  Future<AdminAnnouncement> cancelAnnouncement(String id) async {
+    final response = await _apiClient.patch('/admin/notifications/$id/cancel');
+    return AdminAnnouncement.fromJson(_data(response));
+  }
+
+  Future<Map<String, dynamic>> getReminderStats() async {
+    final response = await _apiClient.get('/admin/reminders/stats');
+    return _data(response);
   }
 }

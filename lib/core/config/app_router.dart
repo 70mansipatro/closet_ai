@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/admin/screens/admin_analytics_screen.dart';
 import '../../features/admin/screens/admin_audit_logs_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
+import '../../features/admin/screens/admin_notifications_screen.dart';
 import '../../features/admin/screens/admin_payments_screen.dart';
 import '../../features/admin/screens/admin_plans_screen.dart';
 import '../../features/admin/screens/admin_profile_screen.dart';
@@ -37,6 +38,12 @@ import '../../features/history/presentation/pages/wear_history_page.dart';
 import '../../features/history/presentation/pages/outfit_history_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/laundry/presentation/pages/laundry_page.dart';
+import '../../features/notifications/presentation/pages/create_reminder_page.dart';
+import '../../features/notifications/presentation/pages/notification_settings_page.dart';
+import '../../features/notifications/presentation/pages/notifications_page.dart';
+import '../../features/notifications/presentation/pages/reminders_page.dart';
+import '../../features/notifications/presentation/pages/smart_reminders_page.dart';
+import '../../features/notifications/presentation/widgets/notification_permission_gate.dart';
 import '../../features/packing/presentation/pages/packing_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
@@ -83,7 +90,8 @@ final appRouter = GoRouter(
       builder: (context, state) => const ProfileSetupPage(),
     ),
     ShellRoute(
-      builder: (context, state, child) => AppShell(child: child),
+      builder: (context, state, child) =>
+          NotificationPermissionGate(child: AppShell(child: child)),
       routes: [
         GoRoute(
           path: '/dashboard',
@@ -208,6 +216,26 @@ final appRouter = GoRouter(
           path: '/profile',
           builder: (context, state) => const ProfilePage(),
         ),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationsPage(),
+        ),
+        GoRoute(
+          path: '/notifications/settings',
+          builder: (context, state) => const NotificationSettingsPage(),
+        ),
+        GoRoute(
+          path: '/reminders',
+          builder: (context, state) => const RemindersPage(),
+        ),
+        GoRoute(
+          path: '/reminders/create',
+          builder: (context, state) => const CreateReminderPage(),
+        ),
+        GoRoute(
+          path: '/smart-reminders',
+          builder: (context, state) => const SmartRemindersPage(),
+        ),
       ],
     ),
     ShellRoute(
@@ -259,6 +287,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/admin/audit-logs',
           builder: (context, state) => const AdminAuditLogsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/notifications',
+          builder: (context, state) => const AdminNotificationsScreen(),
         ),
         GoRoute(
           path: '/admin/settings',

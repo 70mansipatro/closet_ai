@@ -1,3 +1,4 @@
+import 'package:closet_ai/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:closet_ai/features/subscription/presentation/widgets/premium_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,10 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: const [NotificationBell()],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -25,6 +25,7 @@ const _navItems = [
   _AdminNavItem('/admin/analytics', Icons.insights_outlined, 'Analytics'),
   _AdminNavItem('/admin/reports', Icons.description_outlined, 'Reports'),
   _AdminNavItem('/admin/audit-logs', Icons.fact_check_outlined, 'Audit Logs'),
+  _AdminNavItem('/admin/notifications', Icons.campaign_outlined, 'Notifications'),
   _AdminNavItem('/admin/settings', Icons.settings_outlined, 'Settings'),
   _AdminNavItem('/admin/profile', Icons.admin_panel_settings_outlined, 'Profile'),
 ];

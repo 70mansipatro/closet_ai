@@ -14,6 +14,9 @@ export const PERMISSIONS = [
   'settings.view',
   'settings.manage',
   'audit.view',
+  'notifications.view',
+  'notifications.manage',
+  'notifications.send',
 ];
 
 const ADMIN_PERMISSIONS = PERMISSIONS.filter(
