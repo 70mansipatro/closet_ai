@@ -29,6 +29,10 @@ class AppShell extends StatelessWidget {
             label: 'AI',
           ),
           NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Stylist',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             label: 'Profile',
           ),
@@ -39,8 +43,9 @@ class AppShell extends StatelessWidget {
 
   int _selectedIndex(String path) {
     if (path.startsWith('/wardrobe')) return 1;
+    if (path.startsWith('/ai/stylist')) return 3;
     if (path.startsWith('/ai')) return 2;
-    if (path.startsWith('/profile')) return 3;
+    if (path.startsWith('/profile')) return 4;
     return 0;
   }
 
@@ -53,6 +58,9 @@ class AppShell extends StatelessWidget {
         context.go('/ai');
         break;
       case 3:
+        context.go('/ai/stylist');
+        break;
+      case 4:
         context.go('/profile');
         break;
       default:

@@ -16,6 +16,7 @@ import tripRoutes from './routes/trip.routes.js';
 import weatherRoutes from './routes/weather.routes.js';
 import calendarRoutes from './routes/calendar.routes.js';
 import historyRoutes from './routes/history.routes.js';
+import chatRoutes from './routes/chat.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { isDatabaseConnected } from './config/database.js';
 import { protect } from './middleware/auth.js';
@@ -184,6 +185,7 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/laundry', laundryRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/chat', chatRoutes);
 
 const listRoutes = () => {
   const stack = app._router?.stack || app.router?.stack || [];

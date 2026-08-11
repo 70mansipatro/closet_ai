@@ -452,6 +452,12 @@ class _AiHomePageState extends State<AiHomePage> {
                               icon: const Icon(Icons.auto_awesome),
                               label: const Text('Generate Outfit'),
                             ),
+                            const SizedBox(height: 8),
+                            OutlinedButton.icon(
+                              onPressed: () => context.go('/ai/stylist'),
+                              icon: const Icon(Icons.chat_bubble_outline),
+                              label: const Text('Open AI Stylist'),
+                            ),
                             if (!_canGenerate)
                               Padding(
                                 padding: const EdgeInsets.only(top: 12),

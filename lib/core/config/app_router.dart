@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/ai/presentation/pages/ai_home_page.dart';
 import '../../features/ai/presentation/pages/ai_page.dart';
+import '../../features/ai_stylist/presentation/pages/ai_stylist_page.dart';
 import '../../features/ai/presentation/pages/favorite_outfits_page.dart';
 import '../../features/ai/presentation/pages/saved_outfits_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
@@ -101,6 +102,10 @@ final appRouter = GoRouter(
           },
         ),
         GoRoute(path: '/ai', builder: (context, state) => const AiHomePage()),
+        GoRoute(
+          path: '/ai/stylist',
+          builder: (context, state) => const AiStylistPage(),
+        ),
         GoRoute(
           path: '/ai/generate',
           builder: (context, state) => const AiPage(),
