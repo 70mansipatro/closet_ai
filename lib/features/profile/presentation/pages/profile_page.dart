@@ -1,3 +1,4 @@
+import 'package:closet_ai/features/admin/providers/admin_access_provider.dart';
 import 'package:closet_ai/features/subscription/providers/subscription_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final subscriptionAsync = ref.watch(currentSubscriptionProvider);
+    final isAdmin = ref.watch(isAdminProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -32,6 +34,18 @@ class ProfilePage extends ConsumerWidget {
               onTap: () => context.go('/subscription'),
             ),
           ),
+          if (isAdmin) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: const Text('Admin Panel'),
+                subtitle: const Text('Manage users, plans, and analytics'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.go('/admin/dashboard'),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           const Text('Account settings and preferences will appear here.'),
         ],

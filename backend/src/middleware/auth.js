@@ -26,6 +26,10 @@ export const protect = async (req, res, next) => {
       throw new AppError('User not found', 401);
     }
 
+    if (user.status === 'suspended') {
+      throw new AppError('Account suspended', 403, { code: 'ACCOUNT_SUSPENDED' });
+    }
+
     req.user = user;
     next();
   } catch (error) {
@@ -43,7 +47,9 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid token' });
     }
 
-    return res.status(error.statusCode || 401).json({ message: error.message || 'Authentication failed' });
+    return res
+      .status(error.statusCode || 401)
+      .json({ success: false, message: error.message || 'Authentication failed', error: error.details?.code || error.name });
   }
 };
 

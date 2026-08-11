@@ -9,7 +9,6 @@ export const registerSchema = Joi.object({
   height: Joi.number().min(0).allow(null).optional(),
   weight: Joi.number().min(0).allow(null).optional(),
   preferredStyle: Joi.string().max(40).allow(null).optional(),
-  role: Joi.string().valid('user', 'admin').allow(null).optional(),
 });
 
 export const loginSchema = Joi.object({

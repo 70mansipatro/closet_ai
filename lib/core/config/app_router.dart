@@ -1,5 +1,19 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/screens/admin_analytics_screen.dart';
+import '../../features/admin/screens/admin_audit_logs_screen.dart';
+import '../../features/admin/screens/admin_dashboard_screen.dart';
+import '../../features/admin/screens/admin_payments_screen.dart';
+import '../../features/admin/screens/admin_plans_screen.dart';
+import '../../features/admin/screens/admin_profile_screen.dart';
+import '../../features/admin/screens/admin_reports_screen.dart';
+import '../../features/admin/screens/admin_revenue_screen.dart';
+import '../../features/admin/screens/admin_settings_screen.dart';
+import '../../features/admin/screens/admin_subscriptions_screen.dart';
+import '../../features/admin/screens/admin_user_detail_screen.dart';
+import '../../features/admin/screens/admin_users_screen.dart';
+import '../../features/admin/widgets/admin_guard.dart';
+import '../../features/admin/widgets/admin_shell.dart';
 import '../../features/ai/presentation/pages/ai_home_page.dart';
 import '../../features/ai/presentation/pages/ai_page.dart';
 import '../../features/ai_stylist/presentation/pages/ai_stylist_page.dart';
@@ -193,6 +207,66 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfilePage(),
+        ),
+      ],
+    ),
+    ShellRoute(
+      builder: (context, state, child) =>
+          AdminGuard(child: AdminShell(child: child)),
+      routes: [
+        GoRoute(
+          path: '/admin',
+          redirect: (context, state) => '/admin/dashboard',
+        ),
+        GoRoute(
+          path: '/admin/dashboard',
+          builder: (context, state) => const AdminDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/admin/users',
+          builder: (context, state) => const AdminUsersScreen(),
+        ),
+        GoRoute(
+          path: '/admin/users/:id',
+          builder: (context, state) => AdminUserDetailScreen(
+            userId: state.pathParameters['id'] ?? '',
+          ),
+        ),
+        GoRoute(
+          path: '/admin/subscriptions',
+          builder: (context, state) => const AdminSubscriptionsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/plans',
+          builder: (context, state) => const AdminPlansScreen(),
+        ),
+        GoRoute(
+          path: '/admin/payments',
+          builder: (context, state) => const AdminPaymentsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/revenue',
+          builder: (context, state) => const AdminRevenueScreen(),
+        ),
+        GoRoute(
+          path: '/admin/analytics',
+          builder: (context, state) => const AdminAnalyticsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/reports',
+          builder: (context, state) => const AdminReportsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/audit-logs',
+          builder: (context, state) => const AdminAuditLogsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/settings',
+          builder: (context, state) => const AdminSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/profile',
+          builder: (context, state) => const AdminProfileScreen(),
         ),
       ],
     ),

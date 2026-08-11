@@ -87,4 +87,26 @@ class ApiClient {
     final response = await _dio.delete(path);
     return _parseResponse(response);
   }
+
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    Map<String, dynamic>? data,
+  }) async {
+    final response = await _dio.patch(path, data: data);
+    return _parseResponse(response);
+  }
+
+  /// Posts [data] and returns the raw response bytes instead of parsing JSON.
+  /// Used for file downloads such as CSV report exports.
+  Future<List<int>> postForBytes(
+    String path, {
+    Map<String, dynamic>? data,
+  }) async {
+    final response = await _dio.post<List<int>>(
+      path,
+      data: data,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return response.data ?? const <int>[];
+  }
 }

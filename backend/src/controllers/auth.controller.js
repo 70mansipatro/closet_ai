@@ -14,6 +14,7 @@ import {
 } from '../validators/auth.validator.js';
 import { createUser, findUserByEmail, findUserById, updateUserProfile, deleteUserById } from '../repositories/user.repository.js';
 import { AppError } from '../utils/appError.js';
+import { getPermissionsForRole } from '../config/permissions.js';
 
 export const signTokens = async (user) => {
   console.log('[AUTH JWT] creating tokens for user', { userId: user?._id, email: user?.email });
@@ -38,9 +39,12 @@ const sanitizeUser = (user) => ({
   weight: user.weight || 0,
   preferredStyle: user.preferredStyle || 'casual',
   role: user.role,
+  status: user.status || 'active',
+  permissions: getPermissionsForRole(user.role),
   isVerified: user.isVerified || false,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
+  lastLoginAt: user.lastLoginAt || null,
 });
 
 export const registerUser = async (req, res, next) => {
@@ -56,8 +60,8 @@ export const registerUser = async (req, res, next) => {
       height: req.body.height == null ? undefined : req.body.height,
       weight: req.body.weight == null ? undefined : req.body.weight,
       preferredStyle: req.body.preferredStyle ?? undefined,
-      role: req.body.role ?? undefined,
     };
+    delete payload.role;
 
     const { error, value } = registerSchema.validate(payload, { abortEarly: false, stripUnknown: true });
     console.log('[AUTH REGISTER] validation result', {
@@ -116,8 +120,15 @@ export const loginUser = async (req, res, next) => {
     const isMatch = await user.comparePassword(value.password);
     if (!isMatch) throw new AppError('Invalid credentials', 401);
 
+    if (user.status === 'suspended') {
+      throw new AppError('Account suspended', 403, { code: 'ACCOUNT_SUSPENDED' });
+    }
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
     const tokens = await signTokens(user);
-    res.json({ user: sanitizeUser(user), ...tokens });
+    res.json({ success: true, user: sanitizeUser(user), ...tokens });
   } catch (error) {
     next(error);
   }

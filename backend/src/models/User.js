@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema(
     height: { type: Number, default: 0 },
     weight: { type: Number, default: 0 },
     preferredStyle: { type: String, default: 'casual' },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    role: { type: String, enum: ['user', 'admin', 'super_admin'], default: 'user', index: true },
+    status: { type: String, enum: ['active', 'suspended', 'inactive'], default: 'active', index: true },
+    lastLoginAt: { type: Date, default: null },
     isVerified: { type: Boolean, default: false },
     subscriptionStatus: { type: String, enum: ['free', 'active', 'expired', 'cancelled', 'past_due'], default: 'free' },
     subscriptionPlan: { type: String, default: 'free' },
@@ -50,6 +52,8 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+userSchema.index({ createdAt: -1 });
 
 const User = mongoose.model('User', userSchema);
 export default User;
