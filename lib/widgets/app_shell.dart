@@ -21,6 +21,10 @@ class AppShell extends StatelessWidget {
             label: 'Dashboard',
           ),
           NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            label: 'Analytics',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.checkroom_outlined),
             label: 'Wardrobe',
           ),
@@ -42,25 +46,29 @@ class AppShell extends StatelessWidget {
   }
 
   int _selectedIndex(String path) {
-    if (path.startsWith('/wardrobe')) return 1;
-    if (path.startsWith('/ai/stylist')) return 3;
-    if (path.startsWith('/ai')) return 2;
-    if (path.startsWith('/profile')) return 4;
+    if (path.startsWith('/analytics')) return 1;
+    if (path.startsWith('/wardrobe')) return 2;
+    if (path.startsWith('/ai/stylist')) return 4;
+    if (path.startsWith('/ai')) return 3;
+    if (path.startsWith('/profile')) return 5;
     return 0;
   }
 
   void _goTo(BuildContext context, int index) {
     switch (index) {
       case 1:
-        context.go('/wardrobe');
+        context.go('/analytics');
         break;
       case 2:
-        context.go('/ai');
+        context.go('/wardrobe');
         break;
       case 3:
-        context.go('/ai/stylist');
+        context.go('/ai');
         break;
       case 4:
+        context.go('/ai/stylist');
+        break;
+      case 5:
         context.go('/profile');
         break;
       default:

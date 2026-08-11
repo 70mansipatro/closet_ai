@@ -16,6 +16,11 @@ class DashboardPage extends StatelessWidget {
             subtitle: 'Smart recommendation ready',
           ),
           _FeatureCard(
+            title: 'Analytics',
+            subtitle: 'View wardrobe usage and trends',
+            onTap: () => context.go('/analytics'),
+          ),
+          _FeatureCard(
             title: 'Laundry reminder',
             subtitle: '3 items need attention',
             onTap: () => context.go('/laundry'),

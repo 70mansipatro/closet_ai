@@ -14,6 +14,7 @@ import laundryRoutes from './routes/laundry.routes.js';
 import outfitRoutes from './routes/outfit.routes.js';
 import tripRoutes from './routes/trip.routes.js';
 import weatherRoutes from './routes/weather.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 import calendarRoutes from './routes/calendar.routes.js';
 import historyRoutes from './routes/history.routes.js';
 import chatRoutes from './routes/chat.routes.js';
@@ -182,6 +183,7 @@ app.post('/api/clothing/analyze', aiAnalyzeRequestLogger, protect, uploadSingle,
 app.use('/api/outfits', outfitRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/weather', weatherRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/laundry', laundryRoutes);
 app.use('/api/history', historyRoutes);

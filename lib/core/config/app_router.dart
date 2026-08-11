@@ -5,6 +5,7 @@ import '../../features/ai/presentation/pages/ai_page.dart';
 import '../../features/ai_stylist/presentation/pages/ai_stylist_page.dart';
 import '../../features/ai/presentation/pages/favorite_outfits_page.dart';
 import '../../features/ai/presentation/pages/saved_outfits_page.dart';
+import '../../features/analytics/presentation/pages/analytics_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/otp_verification_page.dart';
@@ -72,6 +73,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/dashboard',
           builder: (context, state) => const DashboardPage(),
+        ),
+        GoRoute(
+          path: '/analytics',
+          builder: (context, state) => const AnalyticsPage(),
         ),
         GoRoute(
           path: '/wardrobe',
