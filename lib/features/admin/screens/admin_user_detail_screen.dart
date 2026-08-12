@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../data/models/admin_user.dart';
 import '../providers/admin_access_provider.dart';
 import '../providers/admin_providers.dart';
@@ -114,12 +115,37 @@ class AdminUserDetailScreen extends ConsumerWidget {
                   runSpacing: 8,
                   children: [
                     Chip(label: Text('Role: ${user.role}')),
-                    Chip(label: Text('Status: ${user.status}')),
-                    Chip(label: Text('Plan: ${user.subscriptionPlan}')),
+                    Chip(
+                      label: Text('Status: ${user.status}'),
+                      backgroundColor: user.isSuspended
+                          ? AppColors.error.withValues(alpha: 0.15)
+                          : AppColors.success.withValues(alpha: 0.15),
+                      labelStyle: TextStyle(
+                        color: user.isSuspended ? AppColors.error : AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Chip(
+                      label: Text('Plan: ${user.subscriptionPlan}'),
+                      backgroundColor: user.isPremium
+                          ? AppColors.gold.withValues(alpha: 0.2)
+                          : null,
+                      labelStyle: user.isPremium
+                          ? const TextStyle(fontWeight: FontWeight.w600)
+                          : null,
+                    ),
                     Chip(
                       label: Text('Subscription: ${user.subscriptionStatus}'),
                     ),
-                    if (user.isVerified) const Chip(label: Text('Verified')),
+                    if (user.isVerified)
+                      Chip(
+                        label: const Text('Verified'),
+                        backgroundColor: AppColors.success.withValues(alpha: 0.15),
+                        labelStyle: const TextStyle(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                   ],
                 ),
               ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 
 class NotificationBell extends ConsumerWidget {
@@ -19,6 +20,7 @@ class NotificationBell extends ConsumerWidget {
         ref.invalidate(unreadNotificationCountProvider);
       },
       icon: Badge(
+        backgroundColor: AppColors.pink,
         label: Text(count > 99 ? '99+' : '$count'),
         isLabelVisible: count > 0,
         child: const Icon(Icons.notifications_outlined),

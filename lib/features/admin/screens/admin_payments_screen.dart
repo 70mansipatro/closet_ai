@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../data/models/admin_payment.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/paginated_list.dart';
@@ -20,12 +21,13 @@ const _statusOptions = <String, String>{
 Color _statusColor(BuildContext context, String status) {
   switch (status) {
     case 'success':
-      return Colors.green;
+      return AppColors.success;
     case 'failed':
-      return Colors.red;
+      return AppColors.error;
     case 'pending':
+      return AppColors.gold;
     case 'refunded':
-      return Colors.orange;
+      return AppColors.orange;
     default:
       return Theme.of(context).colorScheme.outline;
   }

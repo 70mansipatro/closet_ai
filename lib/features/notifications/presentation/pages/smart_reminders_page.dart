@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 
 class SmartRemindersPage extends ConsumerWidget {
@@ -34,6 +35,7 @@ class SmartRemindersPage extends ConsumerWidget {
             children: [
               Card(
                 child: SwitchListTile(
+                  secondary: const _GradientIconChip(icon: Icons.auto_awesome),
                   title: const Text('Smart Reminders'),
                   subtitle: const Text('Master switch for all data-driven reminders'),
                   value: settings.enabled,
@@ -107,6 +109,7 @@ class SmartRemindersPage extends ConsumerWidget {
                       onChanged: (v) => controller.update({'smartWearHistory': v}),
                     ),
                     SwitchListTile(
+                      secondary: const _GradientIconChip(icon: Icons.auto_awesome_outlined),
                       title: const Text('Smart AI Stylist'),
                       value: settings.smartAIStylist,
                       onChanged: (v) => controller.update({'smartAIStylist': v}),
@@ -118,6 +121,28 @@ class SmartRemindersPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Small gradient-filled icon chip used as the `secondary` slot on AI-powered
+/// switch rows, so the flagship smart/AI features carry a cyan/blue/purple
+/// accent instead of a plain icon.
+class _GradientIconChip extends StatelessWidget {
+  const _GradientIconChip({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        gradient: AppGradients.blueViolet,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: Colors.white, size: 20),
     );
   }
 }

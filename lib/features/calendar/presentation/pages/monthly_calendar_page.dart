@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/calendar_providers.dart';
 import '../../../ai/data/outfit_repository.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class MonthlyCalendarPage extends ConsumerWidget {
   const MonthlyCalendarPage({super.key});
@@ -31,15 +33,46 @@ class MonthlyCalendarPage extends ConsumerWidget {
                       child: Draggable<String>(
                         data: item['_id']?.toString() ?? '',
                         feedback: Material(
+                          color: Colors.transparent,
                           child: Chip(
+                            backgroundColor: AppColors.purple.withValues(
+                              alpha: 0.18,
+                            ),
+                            side: BorderSide(
+                              color: AppColors.purple.withValues(alpha: 0.5),
+                            ),
+                            avatar: const Icon(
+                              Icons.checkroom_rounded,
+                              size: 16,
+                              color: AppColors.purple,
+                            ),
                             label: Text(
                               item['reason'] ?? item['top'] ?? 'Outfit',
+                              style: const TextStyle(
+                                color: AppColors.purple,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
                         child: Chip(
+                          backgroundColor: AppColors.purple.withValues(
+                            alpha: 0.12,
+                          ),
+                          side: BorderSide(
+                            color: AppColors.purple.withValues(alpha: 0.35),
+                          ),
+                          avatar: const Icon(
+                            Icons.checkroom_rounded,
+                            size: 16,
+                            color: AppColors.purple,
+                          ),
                           label: Text(
                             item['reason'] ?? item['top'] ?? 'Outfit',
+                            style: const TextStyle(
+                              color: AppColors.purple,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -61,6 +94,10 @@ class MonthlyCalendarPage extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final day = index + 1;
                 final date = DateTime(today.year, today.month, day);
+                final isToday =
+                    date.year == today.year &&
+                    date.month == today.month &&
+                    date.day == today.day;
                 return DragTarget<String>(
                   onAcceptWithDetails: (details) async {
                     final outfitId = details.data;
@@ -79,7 +116,38 @@ class MonthlyCalendarPage extends ConsumerWidget {
                     }
                   },
                   builder: (context, candidateData, rejectedData) {
-                    return Card(child: Center(child: Text(day.toString())));
+                    final isHovering = candidateData.isNotEmpty;
+                    if (!isToday && !isHovering) {
+                      return Card(
+                        child: Center(child: Text(day.toString())),
+                      );
+                    }
+                    // "Today" and active drop targets get a gradient accent
+                    // ring so the current day stands out on the grid.
+                    return Container(
+                      margin: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.primary,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            day.toString(),
+                            style: TextStyle(
+                              fontWeight: isToday
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
                   },
                 );
               },

@@ -23,7 +23,14 @@ class KpiCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: effectiveColor),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: effectiveColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: effectiveColor, size: 20),
+            ),
             const SizedBox(height: 12),
             Text(
               value,
@@ -48,7 +55,10 @@ class KpiCard extends StatelessWidget {
 class KpiGrid extends StatelessWidget {
   const KpiGrid({super.key, required this.cards});
 
-  final List<KpiCard> cards;
+  /// Accepts any widget so a screen may mix a couple of highlighted
+  /// [KpiCard]-style tiles (e.g. wrapped in a GradientCard) alongside the
+  /// standard cards without breaking existing `List<KpiCard>` call sites.
+  final List<Widget> cards;
 
   @override
   Widget build(BuildContext context) {

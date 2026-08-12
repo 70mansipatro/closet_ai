@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../data/models/admin_plan.dart';
 import '../providers/admin_access_provider.dart';
 import '../providers/admin_providers.dart';
@@ -136,8 +137,14 @@ class AdminPlansScreen extends ConsumerWidget {
                   Chip(
                     label: Text(plan.isActive ? 'Active' : 'Inactive'),
                     backgroundColor: plan.isActive
-                        ? Colors.green.withValues(alpha: 0.15)
-                        : Colors.grey.withValues(alpha: 0.2),
+                        ? AppColors.success.withValues(alpha: 0.15)
+                        : Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    labelStyle: TextStyle(
+                      color: plan.isActive
+                          ? AppColors.success
+                          : Theme.of(context).colorScheme.outline,
+                      fontWeight: FontWeight.w600,
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
                 ],

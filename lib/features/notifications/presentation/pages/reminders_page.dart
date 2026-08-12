@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 import 'package:closet_ai/features/notifications/domain/notification_model.dart';
 import 'package:closet_ai/features/notifications/domain/reminder_model.dart';
@@ -93,7 +94,7 @@ class RemindersPage extends ConsumerWidget {
                 final info = notificationInfoFor(reminder.type);
                 return Card(
                   child: ListTile(
-                    leading: Icon(info.icon),
+                    leading: _ReminderIcon(icon: info.icon, active: reminder.enabled),
                     title: Text(reminder.title),
                     subtitle: Text(
                       [
@@ -134,6 +135,33 @@ class RemindersPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Leading icon chip for a reminder row: active reminders get a small
+/// gradient accent so they draw the eye in the list; disabled reminders
+/// stay neutral/plain.
+class _ReminderIcon extends StatelessWidget {
+  const _ReminderIcon({required this.icon, required this.active});
+
+  final IconData icon;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!active) {
+      final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+      return Icon(icon, color: muted);
+    }
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        gradient: AppGradients.cyanGreen,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: Colors.white, size: 20),
     );
   }
 }

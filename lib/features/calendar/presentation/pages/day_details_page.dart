@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/calendar_providers.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../widgets/gradient_button.dart';
 
 class DayDetailsPage extends ConsumerStatefulWidget {
   final DateTime date;
@@ -31,41 +33,67 @@ class _DayDetailsPageState extends ConsumerState<DayDetailsPage> {
           final notes = data['notes'] ?? '';
           final status = data['status'] ?? 'Planned';
 
+          final statusColor = _statusColor(status.toString());
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Status: $status',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Text(
+                    status.toString(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text('Notes: $notes'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 Row(
                   children: [
-                    ElevatedButton(
-                      onPressed: () async {
-                        final wear = ref.read(wearTodayActionProvider);
-                        final messenger = ScaffoldMessenger.maybeOf(context);
-                        try {
-                          await wear(outfitId);
-                          if (!mounted) return;
-                          messenger?.showSnackBar(
-                            const SnackBar(content: Text('Marked as worn')),
+                    Expanded(
+                      child: GradientButton(
+                        label: 'Wear Today',
+                        icon: Icons.checkroom_rounded,
+                        variant: GradientButtonVariant.success,
+                        onPressed: () async {
+                          final wear = ref.read(wearTodayActionProvider);
+                          final messenger = ScaffoldMessenger.maybeOf(
+                            context,
                           );
-                        } catch (e) {
-                          if (!mounted) return;
-                          messenger?.showSnackBar(
-                            SnackBar(content: Text('Failed: $e')),
-                          );
-                        }
-                      },
-                      child: const Text('Wear Today'),
+                          try {
+                            await wear(outfitId);
+                            if (!mounted) return;
+                            messenger?.showSnackBar(
+                              const SnackBar(
+                                content: Text('Marked as worn'),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            messenger?.showSnackBar(
+                              SnackBar(content: Text('Failed: $e')),
+                            );
+                          }
+                        },
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
+                    const SizedBox(width: 12),
+                    OutlinedButton(
                       onPressed: () {
                         // navigate to schedule/edit page
                         Navigator.of(context).pushNamed('/calendar/schedule');
@@ -82,5 +110,23 @@ class _DayDetailsPageState extends ConsumerState<DayDetailsPage> {
         error: (e, st) => Center(child: Text('Error loading day: $e')),
       ),
     );
+  }
+
+  /// Purely cosmetic mapping from a status label to an accent color.
+  /// Does not affect status values or any business logic.
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'worn':
+      case 'completed':
+        return AppColors.green;
+      case 'scheduled':
+        return AppColors.purple;
+      case 'skipped':
+      case 'cancelled':
+        return AppColors.error;
+      case 'planned':
+      default:
+        return AppColors.blue;
+    }
   }
 }

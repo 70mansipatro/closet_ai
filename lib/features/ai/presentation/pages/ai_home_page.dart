@@ -1,4 +1,8 @@
+import 'package:closet_ai/core/theme/app_colors.dart';
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/wardrobe/data/wardrobe_repository.dart';
+import 'package:closet_ai/widgets/gradient_button.dart';
+import 'package:closet_ai/widgets/gradient_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -288,12 +292,40 @@ class _AiHomePageState extends State<AiHomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('AI Home', style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Generate recommendations from your wardrobe and keep your outfit plan ready for the week.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                    GradientCard(
+                      gradient: AppGradients.primary,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.auto_awesome,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'AI Outfit Studio',
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Generate recommendations from your wardrobe and keep your outfit plan ready for the week.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -382,7 +414,7 @@ class _AiHomePageState extends State<AiHomePage> {
                                                   ? Icons.check_circle
                                                   : Icons.add_circle_outline,
                                               color: filled
-                                                  ? Colors.green.shade700
+                                                  ? AppColors.success
                                                   : theme.colorScheme.primary,
                                               size: 18,
                                             ),
@@ -401,7 +433,7 @@ class _AiHomePageState extends State<AiHomePage> {
                                               filled ? Icons.check : Icons.add,
                                               size: 18,
                                               color: filled
-                                                  ? Colors.green.shade700
+                                                  ? AppColors.success
                                                   : theme.colorScheme.primary,
                                             ),
                                             const SizedBox(width: 8),
@@ -447,10 +479,10 @@ class _AiHomePageState extends State<AiHomePage> {
                               style: theme.textTheme.titleLarge,
                             ),
                             const SizedBox(height: 12),
-                            FilledButton.icon(
+                            GradientButton(
+                              label: 'Generate Outfit',
+                              icon: Icons.auto_awesome,
                               onPressed: _canGenerate ? _openGenerate : null,
-                              icon: const Icon(Icons.auto_awesome),
-                              label: const Text('Generate Outfit'),
                             ),
                             const SizedBox(height: 8),
                             OutlinedButton.icon(

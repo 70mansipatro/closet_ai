@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/laundry_providers.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class LaundryPage extends ConsumerStatefulWidget {
   const LaundryPage({super.key});
@@ -106,7 +108,30 @@ class _LaundryPageState extends ConsumerState<LaundryPage> {
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                Text('Current status: ${currentStatus.toUpperCase()}'),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(
+                      currentStatus,
+                    ).withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: _statusColor(
+                        currentStatus,
+                      ).withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Text(
+                    'Current status: ${currentStatus.toUpperCase()}',
+                    style: TextStyle(
+                      color: _statusColor(currentStatus),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
@@ -114,6 +139,9 @@ class _LaundryPageState extends ConsumerState<LaundryPage> {
                   children: _laundryStatusOptions
                       .map(
                         (status) => FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _statusColor(status),
+                          ),
                           onPressed: () {
                             Navigator.of(sheetContext).pop();
                             _setLaundryStatus(context, item, status);
@@ -191,29 +219,63 @@ class _LaundryPageState extends ConsumerState<LaundryPage> {
                         const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final item = Map<String, dynamic>.from(items[index]);
-                      return ListTile(
-                        leading:
-                            item['imageUrl'] != null &&
-                                item['imageUrl'].toString().isNotEmpty
-                            ? CircleAvatar(
-                                backgroundImage: NetworkImage(
-                                  item['imageUrl'] as String,
+                      final status =
+                          item['laundryStatus']?.toString() ?? 'clean';
+                      final statusColor = _statusColor(status);
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            left: BorderSide(color: statusColor, width: 4),
+                          ),
+                        ),
+                        child: ListTile(
+                          leading:
+                              item['imageUrl'] != null &&
+                                  item['imageUrl'].toString().isNotEmpty
+                              ? CircleAvatar(
+                                  backgroundImage: NetworkImage(
+                                    item['imageUrl'] as String,
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  backgroundColor: statusColor.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  child: Icon(
+                                    Icons.checkroom_outlined,
+                                    color: statusColor,
+                                  ),
                                 ),
-                              )
-                            : const CircleAvatar(
-                                child: Icon(Icons.checkroom_outlined),
+                          title: Text(
+                            item['subCategory']?.toString() ??
+                                item['category']?.toString() ??
+                                'Item',
+                          ),
+                          subtitle: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.only(right: 6),
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                        title: Text(
-                          item['subCategory']?.toString() ??
-                              item['category']?.toString() ??
-                              'Item',
-                        ),
-                        subtitle: Text(
-                          'Laundry: ${item['laundryStatus'] ?? 'clean'}',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => _showLaundryActions(context, item),
+                              Text(
+                                'Laundry: $status',
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () =>
+                                _showLaundryActions(context, item),
+                          ),
                         ),
                       );
                     },
@@ -277,7 +339,20 @@ class _LaundryPageState extends ConsumerState<LaundryPage> {
   }
 
   Widget _buildStatistics(Map<String, dynamic> stats) {
-    return Card(
+    // A single subtle aqua/green gradient accent on the summary card, per
+    // the laundry palette guidance. Individual item rows stay flat/clean.
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppGradients.cyanGreen,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cyan.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -299,11 +374,38 @@ class _LaundryPageState extends ConsumerState<LaundryPage> {
       children: [
         Text(
           value.toString(),
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
         const SizedBox(height: 4),
-        Text(label),
+        Text(label, style: const TextStyle(color: Colors.white)),
       ],
     );
+  }
+
+  /// Purely cosmetic mapping from laundry status to an aqua/blue/green
+  /// accent color. Does not change status values or update logic.
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'clean':
+      case 'ready':
+        return AppColors.green;
+      case 'washing':
+      case 'drying':
+        return AppColors.cyan;
+      case 'ironing':
+        return AppColors.blue;
+      case 'in-use':
+        return AppColors.teal;
+      case 'dirty':
+        return AppColors.orange;
+      case 'repair':
+        return AppColors.error;
+      default:
+        return AppColors.teal;
+    }
   }
 }

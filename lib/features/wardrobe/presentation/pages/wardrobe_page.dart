@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_gradients.dart';
 import '../../application/wardrobe_state.dart';
 import '../../domain/wardrobe_item.dart';
 import '../widgets/platform_image_preview.dart';
@@ -132,38 +134,35 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          ActionChip(
-                            label: Text(
-                              _selectedCategory == null
-                                  ? 'All categories'
-                                  : _selectedCategory!.toUpperCase(),
-                            ),
+                          _FilterPill(
+                            label: _selectedCategory == null
+                                ? 'All categories'
+                                : _selectedCategory!.toUpperCase(),
+                            isActive: _selectedCategory != null,
                             onPressed: () => _showFilterSheet(),
                           ),
-                          ActionChip(
-                            label: Text(
-                              _selectedSeason == null
-                                  ? 'All seasons'
-                                  : _selectedSeason!.toUpperCase(),
-                            ),
+                          _FilterPill(
+                            label: _selectedSeason == null
+                                ? 'All seasons'
+                                : _selectedSeason!.toUpperCase(),
+                            isActive: _selectedSeason != null,
                             onPressed: () => _showFilterSheet(),
                           ),
-                          ActionChip(
-                            label: Text(
-                              _favoriteFilter == null
-                                  ? 'All favorites'
-                                  : (_favoriteFilter!
-                                        ? 'Favorites only'
-                                        : 'Non-favorites'),
-                            ),
+                          _FilterPill(
+                            label: _favoriteFilter == null
+                                ? 'All favorites'
+                                : (_favoriteFilter!
+                                      ? 'Favorites only'
+                                      : 'Non-favorites'),
+                            isActive: _favoriteFilter != null,
                             onPressed: () => _showFilterSheet(),
                           ),
-                          ActionChip(
-                            label: Text(
-                              _brandFilter == null || _brandFilter!.isEmpty
-                                  ? 'All brands'
-                                  : _brandFilter!,
-                            ),
+                          _FilterPill(
+                            label: _brandFilter == null || _brandFilter!.isEmpty
+                                ? 'All brands'
+                                : _brandFilter!,
+                            isActive:
+                                _brandFilter != null && _brandFilter!.isNotEmpty,
                             onPressed: () => _showFilterSheet(),
                           ),
                           TextButton.icon(
@@ -265,13 +264,11 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _GradientFab(
         onPressed: () async {
           await context.push('/wardrobe/form');
           await _reload();
         },
-        icon: const Icon(Icons.add_outlined),
-        label: const Text('Add'),
       ),
     );
   }
@@ -310,6 +307,109 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
       _sortOrder = sort['sortOrder']!;
     });
     await _reload();
+  }
+}
+
+/// A filter pill matching the current filter-sheet trigger. When a filter
+/// is actively applied (non-default), it lights up with the primary brand
+/// gradient instead of the neutral themed chip.
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isActive) {
+      return ActionChip(label: Text(label), onPressed: onPressed);
+    }
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.purple.withValues(alpha: 0.28),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Gradient-filled floating action button for the primary "Add" action.
+class _GradientFab extends StatelessWidget {
+  const _GradientFab({required this.onPressed});
+
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.purple.withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(28),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onPressed,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add_outlined, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  'Add',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -785,7 +885,7 @@ class WardrobeListTile extends StatelessWidget {
       child: ListTile(
         leading: item.imageUrl.isNotEmpty
             ? ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(16),
                 child: PlatformImagePreview(
                   imageUrl: item.imageUrl,
                   width: 48,

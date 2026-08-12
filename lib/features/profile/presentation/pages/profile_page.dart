@@ -1,3 +1,4 @@
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/admin/providers/admin_access_provider.dart';
 import 'package:closet_ai/features/subscription/providers/subscription_providers.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,8 @@ class ProfilePage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const _ProfileHeader(),
+          const SizedBox(height: 16),
           Card(
             child: ListTile(
               leading: const Icon(Icons.workspace_premium_outlined),
@@ -82,6 +85,61 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           const Text('Account settings and preferences will appear here.'),
+        ],
+      ),
+    );
+  }
+}
+
+/// Profile header: an avatar sitting inside a soft brand-gradient ring,
+/// giving the top of the screen a modern focal point without touching any
+/// of the settings list logic below.
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppGradients.primary.colors.first.withValues(alpha: 0.12),
+            AppGradients.primary.colors.last.withValues(alpha: 0.12),
+          ],
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            padding: const EdgeInsets.all(3),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppGradients.primary,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.scaffoldBackgroundColor,
+              ),
+              child: Icon(
+                Icons.person,
+                size: 44,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'My Profile',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );

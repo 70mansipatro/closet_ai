@@ -1,9 +1,12 @@
+import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:closet_ai/features/subscription/data/models/subscription.dart';
 import 'package:closet_ai/features/subscription/data/models/subscription_plan.dart';
 import 'package:closet_ai/features/subscription/data/utils/payment_signature.dart';
 import 'package:closet_ai/features/subscription/presentation/widgets/plan_card.dart';
 import 'package:closet_ai/features/subscription/presentation/widgets/premium_banner.dart';
 import 'package:closet_ai/features/subscription/providers/subscription_providers.dart';
+import 'package:closet_ai/widgets/gradient_button.dart';
+import 'package:closet_ai/widgets/gradient_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -59,20 +62,14 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                           setState(() => _selectedPlan = plan.planCode),
                     ),
                   const SizedBox(height: 16),
-                  FilledButton.icon(
+                  GradientButton(
+                    variant: GradientButtonVariant.premium,
+                    label: _isProcessing ? 'Processing...' : 'Subscribe Now',
+                    icon: _isProcessing ? null : Icons.payment_outlined,
+                    loading: _isProcessing,
                     onPressed: _isProcessing
                         ? null
                         : () => _subscribe(context, plans),
-                    icon: _isProcessing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.payment_outlined),
-                    label: Text(
-                      _isProcessing ? 'Processing...' : 'Subscribe Now',
-                    ),
                   ),
                 ],
               ),
@@ -88,15 +85,26 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   Widget _buildSubscriptionStatus(SubscriptionStatusModel? status) {
     if (status == null) return const SizedBox.shrink();
     final isActive = status.status == 'active';
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GlassCard(
+        accentColor: isActive ? AppColors.green : AppColors.purple,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              isActive ? 'Premium Active' : 'Current plan',
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Icon(
+                  isActive ? Icons.workspace_premium : Icons.info_outline,
+                  color: isActive ? AppColors.green : AppColors.purple,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isActive ? 'Premium Active' : 'Current plan',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text('Plan: ${status.plan}'),

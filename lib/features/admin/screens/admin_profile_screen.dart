@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_gradients.dart';
 import '../../auth/application/auth_state.dart';
 
 String _formatDate(dynamic value) {
@@ -47,12 +48,19 @@ class AdminProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    child: Text(
-                      (name.isNotEmpty ? name[0] : email.isNotEmpty ? email[0] : 'A')
-                          .toUpperCase(),
-                      style: const TextStyle(fontSize: 24),
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppGradients.blueViolet,
+                    ),
+                    child: CircleAvatar(
+                      radius: 28,
+                      child: Text(
+                        (name.isNotEmpty ? name[0] : email.isNotEmpty ? email[0] : 'A')
+                            .toUpperCase(),
+                        style: const TextStyle(fontSize: 24),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),

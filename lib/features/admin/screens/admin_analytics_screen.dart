@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/kpi_card.dart';
 
@@ -42,7 +43,7 @@ Widget buildAdminAnalyticsBarChart(
   List<dynamic>? raw, {
   String labelKey = 'label',
   String valueKey = 'count',
-  Color color = Colors.blueAccent,
+  Color color = AppColors.brightBlue,
   int take = 8,
   String emptyMessage = 'No data available yet.',
 }) {
@@ -319,25 +320,25 @@ class _UsersAnalyticsTab extends StatelessWidget {
                 label: 'Active',
                 value: '${data['active'] ?? 0}',
                 icon: Icons.person_outline,
-                color: Colors.green,
+                color: AppColors.success,
               ),
               KpiCard(
                 label: 'Premium',
                 value: '${data['premium'] ?? 0}',
                 icon: Icons.workspace_premium_outlined,
-                color: Colors.amber,
+                color: AppColors.gold,
               ),
               KpiCard(
                 label: 'Free',
                 value: '${data['free'] ?? 0}',
                 icon: Icons.person_off_outlined,
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.outline,
               ),
               KpiCard(
                 label: 'Suspended',
                 value: '${data['suspended'] ?? 0}',
                 icon: Icons.block_outlined,
-                color: Colors.red,
+                color: AppColors.error,
               ),
             ],
           ),
@@ -347,7 +348,7 @@ class _UsersAnalyticsTab extends StatelessWidget {
           buildAdminAnalyticsBarChart(
             data['growth'] as List?,
             labelKey: 'period',
-            color: Colors.indigo,
+            color: AppColors.brightBlue,
             emptyMessage: 'No user growth data for this period.',
           ),
         ],
@@ -372,7 +373,7 @@ class _AiAnalyticsTab extends StatelessWidget {
                 label: 'Total Requests',
                 value: '${data['totalRequests'] ?? 0}',
                 icon: Icons.auto_awesome_outlined,
-                color: Colors.purple,
+                color: AppColors.purple,
               ),
             ],
           ),
@@ -385,7 +386,7 @@ class _AiAnalyticsTab extends StatelessWidget {
           buildAdminAnalyticsBarChart(
             data['byFeature'] as List?,
             labelKey: 'feature',
-            color: Colors.purple,
+            color: AppColors.pink,
             emptyMessage: 'No AI feature usage recorded yet.',
           ),
           const SizedBox(height: 24),
@@ -421,7 +422,7 @@ class _WardrobeAnalyticsTab extends StatelessWidget {
                 label: 'Total Items',
                 value: '${data['totalItems'] ?? 0}',
                 icon: Icons.checkroom_outlined,
-                color: Colors.blue,
+                color: AppColors.blue,
               ),
             ],
           ),
@@ -455,7 +456,7 @@ class _WardrobeAnalyticsTab extends StatelessWidget {
           buildAdminAnalyticsBarChart(
             data['growth'] as List?,
             labelKey: 'period',
-            color: Colors.blue,
+            color: AppColors.cyan,
             emptyMessage: 'No wardrobe growth data for this period.',
           ),
         ],
@@ -485,25 +486,25 @@ class _OutfitsAnalyticsTab extends StatelessWidget {
                 label: 'Favorites',
                 value: '${data['favoriteOutfits'] ?? 0}',
                 icon: Icons.favorite_outline,
-                color: Colors.pink,
+                color: AppColors.pink,
               ),
               KpiCard(
                 label: 'Planned',
                 value: '${data['planned'] ?? 0}',
                 icon: Icons.event_note_outlined,
-                color: Colors.blue,
+                color: AppColors.blue,
               ),
               KpiCard(
                 label: 'Worn',
                 value: '${data['worn'] ?? 0}',
                 icon: Icons.check_circle_outline,
-                color: Colors.green,
+                color: AppColors.success,
               ),
               KpiCard(
                 label: 'Skipped',
                 value: '${data['skipped'] ?? 0}',
                 icon: Icons.cancel_outlined,
-                color: Colors.orange,
+                color: AppColors.orange,
               ),
             ],
           ),
@@ -515,7 +516,7 @@ class _OutfitsAnalyticsTab extends StatelessWidget {
           const SizedBox(height: 12),
           buildAdminAnalyticsBarChart(
             data['byOccasion'] as List?,
-            color: Colors.deepOrange,
+            color: AppColors.deepPurple,
             emptyMessage: 'No occasion data yet.',
           ),
           const SizedBox(height: 24),
@@ -524,7 +525,7 @@ class _OutfitsAnalyticsTab extends StatelessWidget {
           buildAdminAnalyticsBarChart(
             data['growth'] as List?,
             labelKey: 'period',
-            color: Colors.teal,
+            color: AppColors.teal,
             emptyMessage: 'No outfit growth data for this period.',
           ),
         ],
@@ -549,13 +550,13 @@ class _LaundryAnalyticsTab extends StatelessWidget {
                 label: 'History Records',
                 value: '${data['totalHistoryRecords'] ?? 0}',
                 icon: Icons.local_laundry_service_outlined,
-                color: Colors.cyan,
+                color: AppColors.cyan,
               ),
               KpiCard(
                 label: 'Overdue',
                 value: '${data['overdue'] ?? 0}',
                 icon: Icons.warning_amber_outlined,
-                color: Colors.red,
+                color: AppColors.error,
               ),
             ],
           ),
@@ -564,7 +565,7 @@ class _LaundryAnalyticsTab extends StatelessWidget {
           const SizedBox(height: 12),
           buildAdminAnalyticsBarChart(
             data['byStatus'] as List?,
-            color: Colors.cyan,
+            color: AppColors.cyan,
             emptyMessage: 'No laundry status data yet.',
           ),
         ],
@@ -594,31 +595,31 @@ class _TripsAnalyticsTab extends StatelessWidget {
                 label: 'Upcoming',
                 value: '${data['upcoming'] ?? 0}',
                 icon: Icons.upcoming_outlined,
-                color: Colors.blue,
+                color: AppColors.blue,
               ),
               KpiCard(
                 label: 'Completed',
                 value: '${data['completed'] ?? 0}',
                 icon: Icons.check_circle_outline,
-                color: Colors.green,
+                color: AppColors.success,
               ),
               KpiCard(
                 label: 'Packing Lists',
                 value: '${data['packingLists'] ?? 0}',
                 icon: Icons.list_alt_outlined,
-                color: Colors.indigo,
+                color: AppColors.brightBlue,
               ),
               KpiCard(
                 label: 'Packed Items',
                 value: '${data['packedItems'] ?? 0}',
                 icon: Icons.luggage_outlined,
-                color: Colors.teal,
+                color: AppColors.teal,
               ),
               KpiCard(
                 label: 'Unpacked Items',
                 value: '${data['unpackedItems'] ?? 0}',
                 icon: Icons.inventory_2_outlined,
-                color: Colors.orange,
+                color: AppColors.orange,
               ),
             ],
           ),

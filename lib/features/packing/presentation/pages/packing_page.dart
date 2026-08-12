@@ -1,6 +1,9 @@
 import 'package:closet_ai/features/packing/application/packing_providers.dart';
 import 'package:closet_ai/features/packing/domain/packing_item.dart';
 import 'package:closet_ai/features/trip/application/trip_providers.dart';
+import 'package:closet_ai/core/theme/app_colors.dart';
+import 'package:closet_ai/core/theme/app_gradients.dart';
+import 'package:closet_ai/widgets/gradient_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -64,22 +67,96 @@ class _PackingPageState extends ConsumerState<PackingPage> {
   }
 
   Widget _buildPackingItem(PackingItem item) {
+    Future<void> toggle() async {
+      if (_selectedTripId == null) return;
+      await ref
+          .read(packingRepositoryProvider)
+          .togglePacked(_selectedTripId!, item.id);
+      ref.invalidate(packingListProvider(_selectedTripId!));
+    }
+
     return Card(
       child: ListTile(
         title: Text(item.name),
         subtitle: Text(
           '${item.category} · Qty ${item.quantity}${item.reason.isNotEmpty ? ' · ${item.reason}' : ''}',
         ),
-        trailing: Checkbox(
-          value: item.packed,
-          onChanged: (_) async {
-            if (_selectedTripId == null) return;
-            await ref
-                .read(packingRepositoryProvider)
-                .togglePacked(_selectedTripId!, item.id);
-            ref.invalidate(packingListProvider(_selectedTripId!));
-          },
+        trailing: GestureDetector(
+          onTap: toggle,
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              gradient: item.packed ? AppGradients.primary : null,
+              borderRadius: BorderRadius.circular(8),
+              border: item.packed
+                  ? null
+                  : Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                      width: 1.5,
+                    ),
+            ),
+            child: item.packed
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                : null,
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Custom gradient-filled progress bar for the packing checklist. Reads
+  /// the already-fetched item list purely to compute a display fraction —
+  /// it does not alter how packed/total is calculated elsewhere.
+  Widget _buildPackingProgress(List<PackingItem> items) {
+    final total = items.length;
+    final packed = items.where((item) => item.packed).length;
+    final fraction = total == 0 ? 0.0 : packed / total;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Packed $packed of $total',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              Text(
+                '${(fraction * 100).round()}%',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.purple,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Stack(
+            children: [
+              Container(
+                height: 10,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: fraction.clamp(0.0, 1.0),
+                child: Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -124,9 +201,10 @@ class _PackingPageState extends ConsumerState<PackingPage> {
               error: (error, stack) => Text('Unable to load trips: $error'),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            GradientButton(
+              label: 'Generate Packing List',
+              icon: Icons.auto_awesome_rounded,
               onPressed: _selectedTripId == null ? null : _generatePacking,
-              child: const Text('Generate Packing List'),
             ),
             const SizedBox(height: 16),
             if (_packingSummary != null) ...[
@@ -146,12 +224,20 @@ class _PackingPageState extends ConsumerState<PackingPage> {
                       ),
                     );
                   }
-                  return ListView.separated(
-                    itemCount: items.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) =>
-                        _buildPackingItem(items[index]),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPackingProgress(items),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: items.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) =>
+                              _buildPackingItem(items[index]),
+                        ),
+                      ),
+                    ],
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),

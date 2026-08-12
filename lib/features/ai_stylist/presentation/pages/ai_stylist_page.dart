@@ -1,3 +1,4 @@
+import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:closet_ai/features/ai_stylist/data/chat_repository.dart';
 import 'package:closet_ai/features/subscription/presentation/widgets/premium_feature_lock.dart';
 import 'package:flutter/material.dart';
@@ -276,10 +277,27 @@ class _AiStylistPageState extends ConsumerState<AiStylistPage> {
                         constraints: const BoxConstraints(maxWidth: 650),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isUser
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.surfaceContainerHighest,
+                          color: isUser ? theme.colorScheme.primary : null,
+                          gradient: isUser
+                              ? null
+                              : LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppColors.brightBlue.withValues(
+                                      alpha: 0.12,
+                                    ),
+                                    AppColors.purple.withValues(alpha: 0.12),
+                                  ],
+                                ),
                           borderRadius: BorderRadius.circular(16),
+                          border: isUser
+                              ? null
+                              : Border.all(
+                                  color: AppColors.purple.withValues(
+                                    alpha: 0.25,
+                                  ),
+                                ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,7 +360,6 @@ class _AiStylistPageState extends ConsumerState<AiStylistPage> {
                       controller: _messageController,
                       decoration: const InputDecoration(
                         hintText: 'Ask your AI stylist...',
-                        border: OutlineInputBorder(),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
@@ -368,8 +385,16 @@ class _AiStylistPageState extends ConsumerState<AiStylistPage> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.brightBlue.withValues(alpha: 0.12),
+              AppColors.purple.withValues(alpha: 0.12),
+            ],
+          ),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.purple.withValues(alpha: 0.25)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

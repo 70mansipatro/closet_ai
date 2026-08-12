@@ -1,5 +1,7 @@
 import 'package:closet_ai/features/trip/application/trip_providers.dart';
 import 'package:closet_ai/features/trip/domain/trip.dart';
+import 'package:closet_ai/core/theme/app_gradients.dart';
+import 'package:closet_ai/widgets/gradient_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -63,7 +65,10 @@ class TripPage extends ConsumerWidget {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
+            GradientButton(
+              label: 'Create',
+              expand: false,
+              gradient: AppGradients.violetPink,
               onPressed: () async {
                 final tripPayload = {
                   'tripName': nameController.text.trim(),
@@ -89,7 +94,6 @@ class TripPage extends ConsumerWidget {
                   }
                 }
               },
-              child: const Text('Create'),
             ),
           ],
         );
@@ -99,15 +103,40 @@ class TripPage extends ConsumerWidget {
 
   Widget _buildTripTile(BuildContext context, Trip trip) {
     return Card(
-      child: ListTile(
-        title: Text(trip.tripName),
-        subtitle: Text(
-          '${trip.city}, ${trip.country}\n${trip.startDate.toIso8601String().split('T').first} — ${trip.endDate.toIso8601String().split('T').first}',
-        ),
-        isThreeLine: true,
-        onTap: () {
-          context.push('/packing/${trip.id}');
-        },
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Subtle blue/purple/pink gradient header strip per the
+          // trip/packing palette guidance.
+          Container(height: 6, decoration: const BoxDecoration(
+            gradient: AppGradients.blueViolet,
+          )),
+          ListTile(
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                gradient: AppGradients.violetPink,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.flight_takeoff_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            title: Text(trip.tripName),
+            subtitle: Text(
+              '${trip.city}, ${trip.country}\n${trip.startDate.toIso8601String().split('T').first} — ${trip.endDate.toIso8601String().split('T').first}',
+            ),
+            isThreeLine: true,
+            onTap: () {
+              context.push('/packing/${trip.id}');
+            },
+          ),
+        ],
       ),
     );
   }

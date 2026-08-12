@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'package:closet_ai/core/theme/app_colors.dart';
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 import 'package:closet_ai/features/notifications/domain/notification_model.dart';
 
@@ -136,7 +138,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(Icons.notifications_none, size: 48, color: Colors.grey),
+            Icon(Icons.notifications_none, size: 48),
             SizedBox(height: 12),
             Text('No notifications yet.'),
           ],
@@ -180,12 +182,45 @@ class _NotificationTile extends StatelessWidget {
   Color _priorityColor(BuildContext context) {
     switch (notification.priority) {
       case 'urgent':
-        return Colors.red;
+        return AppColors.error;
       case 'high':
-        return Colors.orange;
+        return AppColors.orange;
       default:
         return Theme.of(context).colorScheme.primary;
     }
+  }
+
+  /// Gradient used for the unread leading icon chip, picked to reflect
+  /// urgency while staying within the cyan/blue/purple/pink brand palette.
+  Gradient _priorityGradient() {
+    switch (notification.priority) {
+      case 'urgent':
+      case 'high':
+        return AppGradients.orangePink;
+      default:
+        return AppGradients.blueViolet;
+    }
+  }
+
+  Widget _buildLeading(BuildContext context, NotificationTypeInfo info) {
+    final color = _priorityColor(context);
+    if (!notification.isRead) {
+      // Unread items get a small gradient accent chip so they stand out
+      // against the neutral, plain avatars used for read notifications.
+      return Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          gradient: _priorityGradient(),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(info.icon, color: Colors.white, size: 22),
+      );
+    }
+    return CircleAvatar(
+      backgroundColor: color.withValues(alpha: 0.15),
+      child: Icon(info.icon, color: color),
+    );
   }
 
   @override
@@ -203,10 +238,7 @@ class _NotificationTile extends StatelessWidget {
       onDismissed: (_) => onDismiss(),
       child: ListTile(
         onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: _priorityColor(context).withValues(alpha: 0.15),
-          child: Icon(info.icon, color: _priorityColor(context)),
-        ),
+        leading: _buildLeading(context, info),
         title: Text(
           notification.title,
           style: TextStyle(fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold),

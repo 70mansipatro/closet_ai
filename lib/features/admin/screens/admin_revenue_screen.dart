@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/kpi_card.dart';
 
@@ -75,49 +76,49 @@ class _AdminRevenueScreenState extends ConsumerState<AdminRevenueScreen> {
                         label: 'Today',
                         value: _money(summary['today'] as num?),
                         icon: Icons.today_outlined,
-                        color: Colors.blue,
+                        color: AppColors.blue,
                       ),
                       KpiCard(
                         label: 'This Month',
                         value: _money(summary['month'] as num?),
                         icon: Icons.calendar_month_outlined,
-                        color: Colors.indigo,
+                        color: AppColors.brightBlue,
                       ),
                       KpiCard(
                         label: 'This Year',
                         value: _money(summary['year'] as num?),
                         icon: Icons.calendar_today_outlined,
-                        color: Colors.deepPurple,
+                        color: AppColors.purple,
                       ),
                       KpiCard(
                         label: 'Gross Revenue',
                         value: _money(summary['grossRevenue'] as num?),
                         icon: Icons.trending_up_outlined,
-                        color: Colors.green,
+                        color: AppColors.success,
                       ),
                       KpiCard(
                         label: 'Refunds',
                         value: _money(summary['refunds'] as num?),
                         icon: Icons.undo_outlined,
-                        color: Colors.orange,
+                        color: AppColors.orange,
                       ),
                       KpiCard(
                         label: 'Net Revenue',
                         value: _money(summary['netRevenue'] as num?),
                         icon: Icons.account_balance_wallet_outlined,
-                        color: Colors.teal,
+                        color: AppColors.teal,
                       ),
                       KpiCard(
                         label: 'Successful Payments',
                         value: '${summary['successfulPayments'] ?? 0}',
                         icon: Icons.check_circle_outline,
-                        color: Colors.green,
+                        color: AppColors.success,
                       ),
                       KpiCard(
                         label: 'Failed Payments',
                         value: '${summary['failedPayments'] ?? 0}',
                         icon: Icons.error_outline,
-                        color: Colors.red,
+                        color: AppColors.error,
                       ),
                     ],
                   ),
@@ -219,12 +220,12 @@ class _AdminRevenueScreenState extends ConsumerState<AdminRevenueScreen> {
           lineBarsData: [
             LineChartBarData(
               isCurved: true,
-              color: Colors.green,
+              color: AppColors.success,
               barWidth: 3,
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
-                color: Colors.green.withValues(alpha: 0.15),
+                color: AppColors.success.withValues(alpha: 0.15),
               ),
               spots: [
                 for (var i = 0; i < points.length; i++)

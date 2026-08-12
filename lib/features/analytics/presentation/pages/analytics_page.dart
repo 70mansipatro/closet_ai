@@ -3,7 +3,19 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../application/analytics_providers.dart';
+
+/// Ordered on-brand palette used to give each category/bar a distinct,
+/// readable color. Cycled by index when there are more bars than colors.
+const List<Color> _chartPalette = [
+  AppColors.cyan,
+  AppColors.brightBlue,
+  AppColors.purple,
+  AppColors.pink,
+  AppColors.green,
+  AppColors.orange,
+];
 
 class AnalyticsPage extends ConsumerStatefulWidget {
   const AnalyticsPage({super.key});
@@ -97,7 +109,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(color: Colors.black54)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
             ],
           ),
         ),
@@ -142,9 +159,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text(
+            Text(
               'Understand your wardrobe and wearing habits',
-              style: TextStyle(fontSize: 16, color: Colors.black54),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -168,14 +188,14 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                     'Total Items',
                     overview['wardrobeCount']?.toString() ?? '0',
                     Icons.inventory_2,
-                    Colors.blue,
+                    AppColors.brightBlue,
                   ),
                   const SizedBox(width: 8),
                   _buildSummaryCard(
                     'Total Wears',
                     overview['totalWears']?.toString() ?? '0',
                     Icons.checkroom,
-                    Colors.green,
+                    AppColors.green,
                   ),
                 ],
               ),
@@ -430,7 +450,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                 BarChartRodData(
                   toY: (item['count'] as int).toDouble(),
                   width: 18,
-                  color: Colors.blueAccent,
+                  color: _chartPalette[index % _chartPalette.length],
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ],
             );

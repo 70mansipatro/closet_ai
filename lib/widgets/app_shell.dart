@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../core/theme/app_gradients.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
@@ -12,33 +13,39 @@ class AppShell extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex(currentPath),
-        onDestinationSelected: (index) => _goTo(context, index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.checkroom_outlined),
-            label: 'Wardrobe',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            label: 'AI',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Stylist',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(height: 2, decoration: const BoxDecoration(gradient: AppGradients.primary)),
+          NavigationBar(
+            selectedIndex: _selectedIndex(currentPath),
+            onDestinationSelected: (index) => _goTo(context, index),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                label: 'Dashboard',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.bar_chart_outlined),
+                label: 'Analytics',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.checkroom_outlined),
+                label: 'Wardrobe',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.auto_awesome_outlined),
+                label: 'AI',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.chat_bubble_outline),
+                label: 'Stylist',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                label: 'Profile',
+              ),
+            ],
           ),
         ],
       ),

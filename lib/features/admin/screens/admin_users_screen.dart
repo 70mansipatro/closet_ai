@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../data/models/admin_user.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/paginated_list.dart';
@@ -131,7 +132,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               }
               return Column(
                 children: [
-                  for (final user in result.items) _buildUserCard(user),
+                  for (final user in result.items) _buildUserCard(context, user),
                   PaginationBar(
                     page: result.page,
                     totalPages: result.totalPages,
@@ -178,7 +179,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     );
   }
 
-  Widget _buildUserCard(AdminUser user) {
+  Widget _buildUserCard(BuildContext context, AdminUser user) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -200,15 +201,22 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 Chip(
                   label: Text(user.status),
                   backgroundColor: user.isSuspended
-                      ? Colors.red.withValues(alpha: 0.15)
-                      : Colors.green.withValues(alpha: 0.15),
+                      ? AppColors.error.withValues(alpha: 0.15)
+                      : AppColors.success.withValues(alpha: 0.15),
+                  labelStyle: TextStyle(
+                    color: user.isSuspended ? AppColors.error : AppColors.success,
+                    fontWeight: FontWeight.w600,
+                  ),
                   visualDensity: VisualDensity.compact,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 Chip(
                   label: Text(user.subscriptionPlan),
                   backgroundColor: user.isPremium
-                      ? Colors.amber.withValues(alpha: 0.2)
+                      ? AppColors.gold.withValues(alpha: 0.2)
+                      : null,
+                  labelStyle: user.isPremium
+                      ? const TextStyle(fontWeight: FontWeight.w600)
                       : null,
                   visualDensity: VisualDensity.compact,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -218,7 +226,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             const SizedBox(height: 4),
             Text(
               'Joined ${user.createdAt}',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),

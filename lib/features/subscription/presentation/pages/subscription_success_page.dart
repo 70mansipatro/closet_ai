@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_gradients.dart';
+import '../../../../widgets/gradient_button.dart';
+
 class SubscriptionSuccessPage extends StatelessWidget {
   const SubscriptionSuccessPage({super.key, this.planName = 'Premium Monthly'});
 
@@ -16,8 +20,27 @@ class SubscriptionSuccessPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.celebration, size: 72, color: Colors.green),
-              const SizedBox(height: 16),
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  gradient: AppGradients.premium,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.purple.withValues(alpha: 0.35),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.celebration,
+                  size: 64,
+                  color: AppColors.textOnDark,
+                ),
+              ),
+              const SizedBox(height: 24),
               const Text(
                 'Welcome to Premium!',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -27,10 +50,12 @@ class SubscriptionSuccessPage extends StatelessWidget {
               const SizedBox(height: 8),
               const Text('Your subscription is now active.'),
               const SizedBox(height: 24),
-              FilledButton.icon(
+              GradientButton(
+                variant: GradientButtonVariant.premium,
+                expand: false,
+                label: 'Start Exploring Premium',
+                icon: Icons.explore_outlined,
                 onPressed: () => context.go('/dashboard'),
-                icon: const Icon(Icons.explore_outlined),
-                label: const Text('Start Exploring Premium'),
               ),
             ],
           ),

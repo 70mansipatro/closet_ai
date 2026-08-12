@@ -3,9 +3,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../data/models/admin_subscription.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/paginated_list.dart';
+
+Color _statusColor(BuildContext context, String status) {
+  switch (status) {
+    case 'active':
+      return AppColors.success;
+    case 'cancelled':
+    case 'expired':
+    case 'failed':
+      return AppColors.error;
+    case 'pending':
+    case 'past_due':
+      return AppColors.gold;
+    default:
+      return Theme.of(context).colorScheme.outline;
+  }
+}
 
 class _ChipOption {
   const _ChipOption(this.label, this.value);
@@ -106,7 +123,7 @@ class _AdminSubscriptionsScreenState
               return Column(
                 children: [
                   for (final subscription in result.items)
-                    _buildSubscriptionCard(subscription),
+                    _buildSubscriptionCard(context, subscription),
                   PaginationBar(
                     page: result.page,
                     totalPages: result.totalPages,
@@ -156,7 +173,10 @@ class _AdminSubscriptionsScreenState
     );
   }
 
-  Widget _buildSubscriptionCard(AdminSubscription subscription) {
+  Widget _buildSubscriptionCard(
+    BuildContext context,
+    AdminSubscription subscription,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -181,6 +201,12 @@ class _AdminSubscriptionsScreenState
                 ),
                 Chip(
                   label: Text(subscription.status),
+                  backgroundColor: _statusColor(context, subscription.status)
+                      .withValues(alpha: 0.15),
+                  labelStyle: TextStyle(
+                    color: _statusColor(context, subscription.status),
+                    fontWeight: FontWeight.w600,
+                  ),
                   visualDensity: VisualDensity.compact,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),

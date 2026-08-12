@@ -1,5 +1,6 @@
 import 'package:closet_ai/features/calendar/data/calendar_repository.dart';
 import 'package:closet_ai/core/services/api_client.dart';
+import 'package:closet_ai/widgets/gradient_button.dart';
 import 'package:flutter/material.dart';
 
 class ScheduleOutfitPage extends StatefulWidget {
@@ -45,12 +46,12 @@ class _ScheduleOutfitPageState extends State<ScheduleOutfitPage> {
               decoration: const InputDecoration(labelText: 'Date (ISO)'),
               keyboardType: TextInputType.datetime,
             ),
-            const SizedBox(height: 12),
-            ElevatedButton(
+            const SizedBox(height: 16),
+            GradientButton(
+              label: 'Save',
+              icon: Icons.event_available_rounded,
+              loading: _loading,
               onPressed: _loading ? null : _save,
-              child: _loading
-                  ? const CircularProgressIndicator()
-                  : const Text('Save'),
             ),
           ],
         ),

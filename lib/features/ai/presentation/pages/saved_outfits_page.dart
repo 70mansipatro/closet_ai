@@ -1,4 +1,6 @@
 import 'package:closet_ai/core/services/api_client.dart';
+import 'package:closet_ai/core/theme/app_colors.dart';
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/ai/data/outfit_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -112,6 +114,18 @@ class _SavedOutfitsPageState extends State<SavedOutfitsPage> {
                   final outfit = _outfits[index];
                   return Card(
                     child: ListTile(
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.blueViolet,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.bookmark_rounded,
+                          color: Colors.white,
+                        ),
+                      ),
                       title: Text(
                         outfit['top'] ?? outfit['occasion'] ?? 'Outfit',
                       ),
@@ -124,7 +138,7 @@ class _SavedOutfitsPageState extends State<SavedOutfitsPage> {
                               ? Icons.favorite
                               : Icons.favorite_border,
                           color: outfit['favorite'] == true
-                              ? theme.colorScheme.primary
+                              ? AppColors.pink
                               : null,
                         ),
                         onPressed: () => _toggleFavorite(

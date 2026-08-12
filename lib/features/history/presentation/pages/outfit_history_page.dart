@@ -1,5 +1,6 @@
 import 'package:closet_ai/features/history/data/history_repository.dart';
 import 'package:closet_ai/core/services/api_client.dart';
+import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class OutfitHistoryPage extends StatefulWidget {
@@ -40,12 +41,40 @@ class _OutfitHistoryPageState extends State<OutfitHistoryPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
+              padding: const EdgeInsets.all(16),
               itemCount: _items.length,
               itemBuilder: (context, index) {
                 final item = _items[index];
-                return ListTile(
-                  title: Text(item['date'] ?? ''),
-                  subtitle: Text(item['notes'] ?? ''),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border(
+                        left: BorderSide(
+                          color: AppColors.pink,
+                          width: 4,
+                        ),
+                      ),
+                    ),
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.history_rounded,
+                          color: AppColors.purple,
+                        ),
+                        title: Text(item['date'] ?? ''),
+                        subtitle: Text(item['notes'] ?? ''),
+                      ),
+                    ),
+                  ),
                 );
               },
             ),

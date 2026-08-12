@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 import 'package:closet_ai/features/notifications/domain/reminder_model.dart';
+import 'package:closet_ai/widgets/gradient_button.dart';
 
 const _typeLabels = {
   'CUSTOM': 'Custom',
@@ -177,6 +179,15 @@ class _CreateReminderPageState extends ConsumerState<CreateReminderPage> {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              secondary: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: AppGradients.blueViolet,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.auto_awesome_outlined, color: Colors.white, size: 20),
+              ),
               title: const Text('Smart reminder'),
               subtitle: const Text('Let ClosetAI adjust timing based on your activity'),
               value: _smartEnabled,
@@ -193,11 +204,10 @@ class _CreateReminderPageState extends ConsumerState<CreateReminderPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton(
+                  child: GradientButton(
+                    label: 'Save Reminder',
+                    loading: _saving,
                     onPressed: _saving ? null : _save,
-                    child: _saving
-                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Save Reminder'),
                   ),
                 ),
               ],

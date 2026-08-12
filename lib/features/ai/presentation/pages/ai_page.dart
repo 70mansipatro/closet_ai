@@ -1,5 +1,7 @@
 import 'package:closet_ai/core/services/api_client.dart';
+import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/ai/data/outfit_repository.dart';
+import 'package:closet_ai/widgets/gradient_button.dart';
 import 'package:flutter/material.dart';
 
 class AiPage extends StatefulWidget {
@@ -234,16 +236,11 @@ class _AiPageState extends State<AiPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              FilledButton.icon(
+              GradientButton(
+                label: _isLoading ? 'Generating...' : 'Generate Outfit',
+                icon: Icons.auto_awesome,
+                loading: _isLoading,
                 onPressed: _isLoading ? null : _generateOutfit,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome),
-                label: Text(_isLoading ? 'Generating...' : 'Generate Outfit'),
               ),
               const SizedBox(height: 16),
               if (_error != null)
@@ -294,102 +291,115 @@ class _AiPageState extends State<AiPage> {
         : <Map<String, dynamic>>[];
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Thin gradient accent strip signals this is an AI-generated pick,
+          // while keeping the card content itself clean and readable.
+          Container(height: 4, decoration: const BoxDecoration(
+            gradient: AppGradients.primary,
+          )),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    'Recommended Outfit',
-                    style: theme.textTheme.titleLarge,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recommended Outfit',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                    const _AiPickBadge(),
+                    const SizedBox(width: 8),
+                    Chip(
+                      label: Text(
+                        '${recommendation['confidence'] ?? 0}% confidence',
+                      ),
+                    ),
+                  ],
                 ),
-                Chip(
-                  label: Text(
-                    '${recommendation['confidence'] ?? 0}% confidence',
+                const SizedBox(height: 12),
+                _buildDetailRow(
+                  Icons.checkroom_outlined,
+                  'Top',
+                  recommendation['top'] ?? '—',
+                ),
+                _buildDetailRow(
+                  Icons.trending_up_outlined,
+                  'Bottom',
+                  recommendation['bottom'] ?? '—',
+                ),
+                _buildDetailRow(
+                  Icons.directions_walk_outlined,
+                  'Footwear',
+                  recommendation['footwear'] ?? '—',
+                ),
+                _buildDetailRow(
+                  Icons.style_outlined,
+                  'Outerwear',
+                  recommendation['outerwear'] ?? '—',
+                ),
+                _buildDetailRow(
+                  Icons.accessibility_new_outlined,
+                  'Accessories',
+                  recommendation['accessories'] ?? '—',
+                ),
+                _buildDetailRow(
+                  Icons.shopping_bag_outlined,
+                  'Bag',
+                  recommendation['bag'] ?? '—',
+                ),
+                _buildDetailRow(
+                  Icons.watch_outlined,
+                  'Watch',
+                  recommendation['watch'] ?? '—',
+                ),
+                const SizedBox(height: 12),
+                Text('Why it fits', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(
+                  recommendation['reason'] ?? '—',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                Text('Recommended Items', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (recommendedItems.isEmpty)
+                  const Text('No recommended wardrobe items available.')
+                else
+                  ...recommendedItems.map(
+                    (item) => _buildRecommendedItemTile(item, theme),
                   ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _generateOutfit,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Generate Again'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _saveOutfit,
+                      icon: const Icon(Icons.favorite_border),
+                      label: const Text('Save Outfit'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: _wearToday,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Wear Today'),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            _buildDetailRow(
-              Icons.checkroom_outlined,
-              'Top',
-              recommendation['top'] ?? '—',
-            ),
-            _buildDetailRow(
-              Icons.trending_up_outlined,
-              'Bottom',
-              recommendation['bottom'] ?? '—',
-            ),
-            _buildDetailRow(
-              Icons.directions_walk_outlined,
-              'Footwear',
-              recommendation['footwear'] ?? '—',
-            ),
-            _buildDetailRow(
-              Icons.style_outlined,
-              'Outerwear',
-              recommendation['outerwear'] ?? '—',
-            ),
-            _buildDetailRow(
-              Icons.accessibility_new_outlined,
-              'Accessories',
-              recommendation['accessories'] ?? '—',
-            ),
-            _buildDetailRow(
-              Icons.shopping_bag_outlined,
-              'Bag',
-              recommendation['bag'] ?? '—',
-            ),
-            _buildDetailRow(
-              Icons.watch_outlined,
-              'Watch',
-              recommendation['watch'] ?? '—',
-            ),
-            const SizedBox(height: 12),
-            Text('Why it fits', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              recommendation['reason'] ?? '—',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Text('Recommended Items', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            if (recommendedItems.isEmpty)
-              const Text('No recommended wardrobe items available.')
-            else
-              ...recommendedItems.map(
-                (item) => _buildRecommendedItemTile(item, theme),
-              ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  onPressed: _generateOutfit,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Generate Again'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: _saveOutfit,
-                  icon: const Icon(Icons.favorite_border),
-                  label: const Text('Save Outfit'),
-                ),
-                FilledButton.icon(
-                  onPressed: _wearToday,
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Wear Today'),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -488,6 +498,39 @@ class _AiPageState extends State<AiPage> {
           const SizedBox(width: 8),
           Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600)),
           Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small gradient badge marking a recommendation as an AI pick, used
+/// alongside the confidence chip on the (otherwise clean/readable) result
+/// card.
+class _AiPickBadge extends StatelessWidget {
+  const _AiPickBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        gradient: AppGradients.blueViolet,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.auto_awesome, size: 12, color: Colors.white),
+          SizedBox(width: 4),
+          Text(
+            'AI Pick',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
         ],
       ),
     );

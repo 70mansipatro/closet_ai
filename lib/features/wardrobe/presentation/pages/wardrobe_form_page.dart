@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../widgets/gradient_button.dart';
 import '../../application/wardrobe_state.dart';
 import '../../data/wardrobe_repository.dart';
 import '../../domain/wardrobe_item.dart';
@@ -334,16 +335,12 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
                 ],
               ),
               const SizedBox(height: 12),
-              FilledButton.icon(
+              GradientButton(
+                label: _isAnalyzing ? 'Analyzing…' : 'Analyze with AI',
+                icon: Icons.auto_awesome_outlined,
+                loading: _isAnalyzing,
+                variant: GradientButtonVariant.premium,
                 onPressed: _isAnalyzing ? null : _analyzeImage,
-                icon: _isAnalyzing
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome_outlined),
-                label: Text(_isAnalyzing ? 'Analyzing…' : 'Analyze with AI'),
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
@@ -467,16 +464,11 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
                 ),
                 const SizedBox(height: 16),
               ],
-              FilledButton.icon(
+              GradientButton(
+                label: _isSubmitting ? 'Saving…' : 'Save',
+                icon: Icons.save_outlined,
+                loading: _isSubmitting,
                 onPressed: _isSubmitting ? null : _submit,
-                icon: _isSubmitting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save_outlined),
-                label: Text(_isSubmitting ? 'Saving…' : 'Save'),
               ),
             ],
           ),
