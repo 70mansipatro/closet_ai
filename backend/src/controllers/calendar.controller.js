@@ -13,6 +13,56 @@ import {
 } from '../repositories/calendar.repository.js';
 import { scheduleSchema } from '../validators/calendar.validator.js';
 import { syncOutfitReminder, cancelOutfitReminder } from '../services/reminder.service.js';
+import Clothing from '../models/Clothing.js';
+import Outfit from '../models/Outfit.js';
+
+// Attaches read-only, human-friendly fields (topItem/bottomItem/.../outfit) to
+// calendar entries for API responses, without touching topId/outfitId etc. —
+// those raw refs must stay untouched since calendar.service.js re-saves the
+// same Mongoose documents returned by findCalendarByDate/findCalendarForUser.
+const attachOutfitDetails = async (entries) => {
+  const list = Array.isArray(entries) ? entries : [entries].filter(Boolean);
+  if (list.length === 0) return entries;
+
+  const clothingIds = new Set();
+  const outfitIds = new Set();
+  list.forEach((entry) => {
+    ['topId', 'bottomId', 'footwearId', 'outerwearId'].forEach((field) => {
+      if (entry[field]) clothingIds.add(String(entry[field]));
+    });
+    (entry.accessories || []).forEach((id) => id && clothingIds.add(String(id)));
+    if (entry.outfitId) outfitIds.add(String(entry.outfitId));
+  });
+
+  const [clothingDocs, outfitDocs] = await Promise.all([
+    clothingIds.size
+      ? Clothing.find({ _id: { $in: [...clothingIds] } })
+          .select('category subCategory color imageUrl brand')
+          .lean()
+      : [],
+    outfitIds.size
+      ? Outfit.find({ _id: { $in: [...outfitIds] } })
+          .select('top bottom footwear outerwear accessories occasion weather temperature')
+          .lean()
+      : [],
+  ]);
+
+  const clothingMap = new Map(clothingDocs.map((doc) => [String(doc._id), doc]));
+  const outfitMap = new Map(outfitDocs.map((doc) => [String(doc._id), doc]));
+
+  list.forEach((entry) => {
+    entry.topItem = entry.topId ? clothingMap.get(String(entry.topId)) || null : null;
+    entry.bottomItem = entry.bottomId ? clothingMap.get(String(entry.bottomId)) || null : null;
+    entry.footwearItem = entry.footwearId ? clothingMap.get(String(entry.footwearId)) || null : null;
+    entry.outerwearItem = entry.outerwearId ? clothingMap.get(String(entry.outerwearId)) || null : null;
+    entry.accessoryItems = (entry.accessories || [])
+      .map((id) => clothingMap.get(String(id)))
+      .filter(Boolean);
+    entry.outfit = entry.outfitId ? outfitMap.get(String(entry.outfitId)) || null : null;
+  });
+
+  return entries;
+};
 
 const syncOutfitReminderSafely = async ({ userId, calendarEntry }) => {
   try {
@@ -48,7 +98,8 @@ export const list = async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
     const entries = await findCalendarForUser({ userId: req.user._id, startDate: startDate ? new Date(startDate) : null, endDate: endDate ? new Date(endDate) : null });
-    res.status(200).json({ success: true, data: entries });
+    const enriched = await attachOutfitDetails(entries.map((entry) => entry.toObject()));
+    res.status(200).json({ success: true, data: enriched });
   } catch (error) {
     next(error);
   }
@@ -59,7 +110,8 @@ export const getByDate = async (req, res, next) => {
     const date = new Date(req.params.date);
     if (Number.isNaN(date.getTime())) throw new AppError('Invalid date format', 400);
     const entry = await findCalendarByDate({ userId: req.user._id, date });
-    res.status(200).json({ success: true, data: entry });
+    const enriched = entry ? (await attachOutfitDetails([entry.toObject()]))[0] : null;
+    res.status(200).json({ success: true, data: enriched });
   } catch (error) {
     next(error);
   }
