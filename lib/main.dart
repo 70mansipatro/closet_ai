@@ -39,6 +39,7 @@ class _ClosetAiAppState extends ConsumerState<ClosetAiApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'ClosetAI',
+      debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

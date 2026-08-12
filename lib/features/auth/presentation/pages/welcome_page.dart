@@ -65,10 +65,13 @@ class WelcomePage extends StatelessWidget {
                   onPressed: () => context.go('/register'),
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => context.go('/login'),
-                  icon: const Icon(Icons.login_outlined),
-                  label: const Text('Sign in'),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.go('/login'),
+                    icon: const Icon(Icons.login_outlined),
+                    label: const Text('Sign in'),
+                  ),
                 ),
               ],
             ),

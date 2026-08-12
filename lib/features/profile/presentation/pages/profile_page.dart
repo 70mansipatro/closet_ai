@@ -1,5 +1,6 @@
 import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/admin/providers/admin_access_provider.dart';
+import 'package:closet_ai/features/auth/application/auth_state.dart';
 import 'package:closet_ai/features/subscription/providers/subscription_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,31 @@ import 'package:go_router/go_router.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
+
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await ref.read(authControllerProvider.notifier).logout();
+    if (!context.mounted) return;
+    context.go('/welcome');
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -85,6 +111,17 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           const Text('Account settings and preferences will appear here.'),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+              title: Text(
+                'Sign out',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              onTap: () => _signOut(context, ref),
+            ),
+          ),
         ],
       ),
     );
