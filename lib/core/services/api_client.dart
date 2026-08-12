@@ -42,6 +42,29 @@ class ApiClient {
   final Dio _dio;
   final FlutterSecureStorage _storage;
 
+  /// Extracts a user-facing message from an error thrown by this client,
+  /// preferring the backend's JSON `message` field over Dio's generic
+  /// exception text (e.g. "User not found" instead of "DioException [400]...").
+  static String extractErrorMessage(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] is String) {
+        return data['message'] as String;
+      }
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'Request timed out. Please check your connection and try again.';
+        case DioExceptionType.connectionError:
+          return 'Could not connect to the server. Please check your connection.';
+        default:
+          return 'Something went wrong. Please try again.';
+      }
+    }
+    return error.toString();
+  }
+
   Future<Map<String, dynamic>> _parseResponse(
     Response<dynamic> response,
   ) async {

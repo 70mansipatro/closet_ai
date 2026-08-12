@@ -195,13 +195,16 @@ export const verifyOtp = async (req, res, next) => {
     if (error) throw new AppError(error.details[0].message, 400);
 
     const user = await findUserByEmail(value.email);
-    if (!user || user.otp !== value.otp || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+    const otpMatches = user ? await user.compareOtp(value.otp) : false;
+    if (!user || !otpMatches || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
       throw new AppError('Invalid or expired OTP', 400);
     }
 
+    // Intentionally do not clear otp/otpExpiresAt here — resetPassword below
+    // re-validates the same OTP and is what actually invalidates it. Clearing
+    // it at this step would make the OTP unusable for the reset-password call
+    // that immediately follows in the expected flow.
     user.isVerified = true;
-    user.otp = '';
-    user.otpExpiresAt = null;
     await user.save();
 
     res.json({ message: 'OTP verified successfully' });
@@ -216,7 +219,8 @@ export const resetPassword = async (req, res, next) => {
     if (error) throw new AppError(error.details[0].message, 400);
 
     const user = await findUserByEmail(value.email);
-    if (!user || user.otp !== value.otp || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+    const otpMatches = user ? await user.compareOtp(value.otp) : false;
+    if (!user || !otpMatches || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
       throw new AppError('Invalid or expired OTP', 400);
     }
 

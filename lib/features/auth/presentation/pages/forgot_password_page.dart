@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../application/auth_state.dart';
+import '../../../../core/services/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../widgets/gradient_button.dart';
@@ -32,12 +33,15 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           .read(authControllerProvider.notifier)
           .requestOtp(_emailController.text);
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Code sent to your email')),
+      );
       context.go('/otp-verification', extra: _emailController.text);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ApiClient.extractErrorMessage(error))),
+      );
     }
   }
 

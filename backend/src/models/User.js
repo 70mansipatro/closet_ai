@@ -54,6 +54,18 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
+userSchema.pre('save', async function (next) {
+  if (this.isModified('otp') && this.otp) {
+    this.otp = await bcrypt.hash(this.otp, 10);
+  }
+  next();
+});
+
+userSchema.methods.compareOtp = async function (candidateOtp) {
+  if (!this.otp) return false;
+  return bcrypt.compare(candidateOtp, this.otp);
+};
+
 userSchema.index({ createdAt: -1 });
 
 const User = mongoose.model('User', userSchema);
