@@ -88,6 +88,18 @@ class ApiClient {
     return _parseResponse(response);
   }
 
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    required FormData data,
+  }) async {
+    final response = await _dio.post(
+      path,
+      data: data,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+    return _parseResponse(response);
+  }
+
   Future<Map<String, dynamic>> patch(
     String path, {
     Map<String, dynamic>? data,

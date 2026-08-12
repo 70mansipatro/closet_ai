@@ -15,6 +15,7 @@ import {
 import { createUser, findUserByEmail, findUserById, updateUserProfile, deleteUserById } from '../repositories/user.repository.js';
 import { AppError } from '../utils/appError.js';
 import { getPermissionsForRole } from '../config/permissions.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinary.service.js';
 
 export const signTokens = async (user) => {
   console.log('[AUTH JWT] creating tokens for user', { userId: user?._id, email: user?.email });
@@ -244,6 +245,46 @@ export const updateProfile = async (req, res, next) => {
     if (error) throw new AppError(error.details[0].message, 400);
 
     const user = await updateUserProfile(req.user._id, value);
+    res.json({ user: sanitizeUser(user) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadProfilePhoto = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError('Image file is required', 400);
+    }
+
+    const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/profile');
+
+    if (req.user.profileImagePublicId) {
+      await deleteFromCloudinary(req.user.profileImagePublicId);
+    }
+
+    const user = await updateUserProfile(req.user._id, {
+      profileImage: uploadResult.secure_url,
+      profileImagePublicId: uploadResult.public_id,
+    });
+
+    res.json({ user: sanitizeUser(user) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeProfilePhoto = async (req, res, next) => {
+  try {
+    if (req.user.profileImagePublicId) {
+      await deleteFromCloudinary(req.user.profileImagePublicId);
+    }
+
+    const user = await updateUserProfile(req.user._id, {
+      profileImage: '',
+      profileImagePublicId: '',
+    });
+
     res.json({ user: sanitizeUser(user) });
   } catch (error) {
     next(error);

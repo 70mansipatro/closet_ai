@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -116,6 +119,24 @@ class AuthController extends StateNotifier<AuthState> {
       );
       rethrow;
     }
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> payload) async {
+    final response = await _repository.updateProfile(payload);
+    state = state.copyWith(user: response['user']);
+  }
+
+  Future<void> uploadProfilePhoto({File? imageFile, Uint8List? imageBytes}) async {
+    final response = await _repository.uploadProfilePhoto(
+      imageFile: imageFile,
+      imageBytes: imageBytes,
+    );
+    state = state.copyWith(user: response['user']);
+  }
+
+  Future<void> removeProfilePhoto() async {
+    final response = await _repository.removeProfilePhoto();
+    state = state.copyWith(user: response['user']);
   }
 
   Future<void> requestOtp(String email) async {

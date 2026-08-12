@@ -1,16 +1,39 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:closet_ai/core/theme/app_gradients.dart';
+import 'package:closet_ai/features/auth/application/auth_state.dart';
 import 'package:closet_ai/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:closet_ai/features/subscription/presentation/widgets/premium_banner.dart';
 import 'package:closet_ai/widgets/gradient_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
+  String _greeting(Map<String, dynamic>? user) {
+    final name = (user?['name'] as String?)?.trim();
+    final firstName = (name != null && name.isNotEmpty)
+        ? name.split(RegExp(r'\s+')).first
+        : null;
+    if (firstName == null || firstName.isEmpty) {
+      return 'Welcome 👋';
+    }
+
+    final hour = DateTime.now().hour;
+    final timeGreeting = hour < 12
+        ? 'Good morning'
+        : hour < 17
+        ? 'Good afternoon'
+        : 'Good evening';
+    return '$timeGreeting, $firstName 👋';
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authControllerProvider).user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -19,6 +42,8 @@ class DashboardPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _GreetingHeader(greeting: _greeting(user), photoUrl: user?['profileImage'] as String?),
+          const SizedBox(height: 16),
           const PremiumBanner(),
           const SizedBox(height: 4),
           // Flagship AI feature — gradient hero card to draw attention.
@@ -46,6 +71,58 @@ class DashboardPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Dashboard header: greets the authenticated user by name (or a generic
+/// "Welcome 👋" when unavailable) alongside their real profile photo, or the
+/// default avatar icon when none has been uploaded.
+class _GreetingHeader extends StatelessWidget {
+  const _GreetingHeader({required this.greeting, this.photoUrl});
+
+  final String greeting;
+  final String? photoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final hasPhoto = photoUrl != null && photoUrl!.trim().isNotEmpty;
+
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          padding: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: AppGradients.primary,
+          ),
+          child: ClipOval(
+            child: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: hasPhoto
+                  ? CachedNetworkImage(
+                      imageUrl: photoUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) =>
+                          Icon(Icons.person, color: textColor),
+                    )
+                  : Icon(Icons.person, color: textColor),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            greeting,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

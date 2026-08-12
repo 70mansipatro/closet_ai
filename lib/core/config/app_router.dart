@@ -45,6 +45,7 @@ import '../../features/notifications/presentation/pages/reminders_page.dart';
 import '../../features/notifications/presentation/pages/smart_reminders_page.dart';
 import '../../features/notifications/presentation/widgets/notification_permission_gate.dart';
 import '../../features/packing/presentation/pages/packing_page.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
 import '../../features/subscription/presentation/pages/subscription_success_page.dart';
@@ -215,6 +216,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfilePage(),
+        ),
+        GoRoute(
+          path: '/profile/edit',
+          builder: (context, state) => const EditProfilePage(),
         ),
         GoRoute(
           path: '/notifications',

@@ -1,3 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+
 import '../../../core/services/api_client.dart';
 
 class AuthRepository {
@@ -76,6 +82,47 @@ class AuthRepository {
 
   Future<Map<String, dynamic>> getProfile() {
     return _apiClient.get('/auth/profile');
+  }
+
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> payload) {
+    return _apiClient.put('/auth/profile', data: payload);
+  }
+
+  Future<Map<String, dynamic>> uploadProfilePhoto({
+    File? imageFile,
+    Uint8List? imageBytes,
+  }) async {
+    final formData = FormData();
+    if (imageFile != null) {
+      formData.files.add(
+        MapEntry(
+          'image',
+          await MultipartFile.fromFile(
+            imageFile.path,
+            filename: imageFile.uri.pathSegments.last,
+          ),
+        ),
+      );
+    } else if (imageBytes != null) {
+      formData.files.add(
+        MapEntry(
+          'image',
+          MultipartFile.fromBytes(
+            imageBytes,
+            filename: 'profile.jpg',
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        ),
+      );
+    } else {
+      throw ArgumentError('Image file or bytes are required for upload.');
+    }
+
+    return _apiClient.postMultipart('/auth/profile/photo', data: formData);
+  }
+
+  Future<Map<String, dynamic>> removeProfilePhoto() {
+    return _apiClient.delete('/auth/profile/photo');
   }
 
   Future<Map<String, dynamic>> logout(String refreshToken) {

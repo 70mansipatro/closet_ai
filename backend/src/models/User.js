@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, trim: true, default: '' },
     password: { type: String, required: true, minlength: 6 },
     profileImage: { type: String, default: '' },
+    profileImagePublicId: { type: String, default: '' },
     gender: { type: String, enum: ['male', 'female', 'other', 'prefer-not-to-say'], default: 'prefer-not-to-say' },
     height: { type: Number, default: 0 },
     weight: { type: Number, default: 0 },

@@ -5,34 +5,63 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../widgets/gradient_button.dart';
-import '../../application/auth_state.dart';
+import '../../../auth/application/auth_state.dart';
 
-class ProfileSetupPage extends ConsumerStatefulWidget {
-  const ProfileSetupPage({super.key});
+class EditProfilePage extends ConsumerStatefulWidget {
+  const EditProfilePage({super.key});
 
   @override
-  ConsumerState<ProfileSetupPage> createState() => _ProfileSetupPageState();
+  ConsumerState<EditProfilePage> createState() => _EditProfilePageState();
 }
 
-class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
+class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  final _heightController = TextEditingController();
-  final _weightController = TextEditingController();
-  String _gender = 'prefer-not-to-say';
-  String _style = 'casual';
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _heightController;
+  late final TextEditingController _weightController;
+  late String _gender;
+  late String _style;
+  String _email = '';
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    final user = ref.read(authControllerProvider).user ?? const {};
+
+    _nameController = TextEditingController(text: (user['name'] ?? '').toString());
+    _phoneController = TextEditingController(text: (user['phone'] ?? '').toString());
+    final height = user['height'];
+    _heightController = TextEditingController(
+      text: (height is num && height > 0) ? height.toString() : '',
+    );
+    final weight = user['weight'];
+    _weightController = TextEditingController(
+      text: (weight is num && weight > 0) ? weight.toString() : '',
+    );
+    _gender = (user['gender'] as String?) ?? 'prefer-not-to-say';
+    _style = (user['preferredStyle'] as String?) ?? 'casual';
+    _email = (user['email'] ?? '').toString();
+  }
+
+  @override
   void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
     _heightController.dispose();
     _weightController.dispose();
     super.dispose();
   }
 
-  Future<void> _finishSetup() async {
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isSaving = true);
     try {
       final payload = <String, dynamic>{
+        'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
         'gender': _gender,
         'preferredStyle': _style,
       };
@@ -43,13 +72,16 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
 
       await ref.read(authControllerProvider.notifier).updateProfile(payload);
       if (!mounted) return;
-      context.go('/dashboard');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+      context.pop();
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Could not save your details: ${error.toString().replaceFirst('Exception: ', '')}',
+            'Could not update profile: ${error.toString().replaceFirst('Exception: ', '')}',
           ),
         ),
       );
@@ -63,7 +95,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
     return Scaffold(
       backgroundColor: AppColors.navyDeep,
       appBar: AppBar(
-        title: const Text('Profile setup'),
+        title: const Text('Edit Profile'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -79,21 +111,29 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Tell us a bit about your style',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  TextFormField(
+                    initialValue: _email,
+                    enabled: false,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      helperText: 'Email cannot be changed',
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'These details help tailor wardrobe recommendations.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textOnDarkMuted,
-                    ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                    validator: (value) => value == null || value.trim().length < 2
+                        ? 'Enter your name'
+                        : null,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(labelText: 'Phone'),
+                  ),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _gender,
                     decoration: const InputDecoration(labelText: 'Gender'),
@@ -114,19 +154,29 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                     controller: _heightController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Height (cm)'),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return null;
+                      final parsed = double.tryParse(value.trim());
+                      if (parsed == null || parsed < 0) return 'Enter a valid height';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _weightController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return null;
+                      final parsed = double.tryParse(value.trim());
+                      if (parsed == null || parsed < 0) return 'Enter a valid weight';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _style,
-                    decoration: const InputDecoration(
-                      labelText: 'Preferred style',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Preferred style'),
                     items: const [
                       DropdownMenuItem(value: 'casual', child: Text('Casual')),
                       DropdownMenuItem(
@@ -144,10 +194,10 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                   ),
                   const SizedBox(height: 24),
                   GradientButton(
-                    label: _isSaving ? 'Saving...' : 'Finish setup',
+                    label: _isSaving ? 'Saving...' : 'Save changes',
                     icon: Icons.check_circle_outline,
                     loading: _isSaving,
-                    onPressed: _isSaving ? null : _finishSetup,
+                    onPressed: _isSaving ? null : _save,
                   ),
                 ],
               ),

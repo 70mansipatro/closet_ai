@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
+import { uploadSingle } from '../middleware/upload.js';
 import {
   registerUser,
   loginUser,
@@ -10,6 +11,8 @@ import {
   resetPassword,
   getProfile,
   updateProfile,
+  uploadProfilePhoto,
+  removeProfilePhoto,
   deleteAccount,
 } from '../controllers/auth.controller.js';
 
@@ -24,6 +27,8 @@ router.post('/verify-otp', verifyOtp);
 router.post('/reset-password', resetPassword);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+router.post('/profile/photo', protect, uploadSingle, uploadProfilePhoto);
+router.delete('/profile/photo', protect, removeProfilePhoto);
 router.delete('/delete-account', protect, deleteAccount);
 
 export default router;
