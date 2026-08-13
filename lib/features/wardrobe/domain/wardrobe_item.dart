@@ -2,6 +2,7 @@ class WardrobeItem {
   const WardrobeItem({
     required this.id,
     required this.imageUrl,
+    required this.name,
     required this.category,
     required this.subCategory,
     required this.color,
@@ -19,6 +20,7 @@ class WardrobeItem {
 
   final String id;
   final String imageUrl;
+  final String name;
   final String category;
   final String subCategory;
   final String color;
@@ -33,10 +35,23 @@ class WardrobeItem {
   final double purchasePrice;
   final String notes;
 
+  /// Best available display label: an explicit name, else a composed
+  /// "Brand Color Category" fallback, else just the category.
+  String get displayName {
+    if (name.isNotEmpty) return name;
+    final composed = [
+      brand,
+      color,
+      subCategory.isNotEmpty ? subCategory : category,
+    ].where((part) => part.trim().isNotEmpty).join(' ');
+    return composed.isEmpty ? category : composed;
+  }
+
   factory WardrobeItem.fromJson(Map<String, dynamic> json) {
     return WardrobeItem(
       id: json['_id']?.toString() ?? '',
       imageUrl: json['imageUrl']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
       category: json['category']?.toString() ?? 'other',
       color: json['color']?.toString() ?? '',
       season: json['season']?.toString() ?? 'all-season',
@@ -58,6 +73,7 @@ class WardrobeItem {
     return {
       '_id': id,
       'imageUrl': imageUrl,
+      'name': name,
       'category': category,
       'color': color,
       'season': season,

@@ -9,6 +9,7 @@ import {
   updateClothing,
   deleteClothing,
   analyzeClothing,
+  markClothingAsWorn,
 } from '../controllers/clothing.controller.js';
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.post('/analyze', protect, uploadSingle, analyzeClothing);
 router.get('/', protect, listClothing);
 router.get('/:id', protect, getClothing);
 router.put('/:id', protect, uploadSingle, updateClothing);
+router.post('/:id/wear', protect, markClothingAsWorn);
 router.delete('/:id', protect, deleteClothing);
 
 export default router;

@@ -44,6 +44,13 @@ class WardrobeState {
   }
 }
 
+class WardrobeMarkWornResult {
+  const WardrobeMarkWornResult({required this.item, required this.wearHistory});
+
+  final WardrobeItem item;
+  final Map<String, dynamic> wearHistory;
+}
+
 class WardrobeController extends StateNotifier<WardrobeState> {
   WardrobeController(this._repository)
     : super(
@@ -207,6 +214,43 @@ class WardrobeController extends StateNotifier<WardrobeState> {
         errorMessage: _userMessage(error),
       );
       rethrow;
+    }
+  }
+
+  bool _isMarkingWorn = false;
+
+  Future<WardrobeMarkWornResult> markAsWorn({
+    required String id,
+    required String occasion,
+    int? rating,
+    String? notes,
+  }) async {
+    if (_isMarkingWorn) {
+      throw StateError('A wear request is already in progress.');
+    }
+    _isMarkingWorn = true;
+    try {
+      final response = await _repository.markAsWorn(
+        id: id,
+        occasion: occasion,
+        rating: rating,
+        notes: notes,
+      );
+      final data = response['data'] as Map<String, dynamic>? ?? {};
+      final clothingJson = data['clothing'] as Map<String, dynamic>? ?? {};
+      final wearHistoryJson = data['wearHistory'] as Map<String, dynamic>? ?? {};
+      final updatedItem = WardrobeItem.fromJson(clothingJson);
+
+      state = state.copyWith(
+        items: [
+          for (final existing in state.items)
+            if (existing.id == updatedItem.id) updatedItem else existing,
+        ],
+      );
+
+      return WardrobeMarkWornResult(item: updatedItem, wearHistory: wearHistoryJson);
+    } finally {
+      _isMarkingWorn = false;
     }
   }
 

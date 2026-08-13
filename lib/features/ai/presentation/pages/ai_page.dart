@@ -392,7 +392,7 @@ class _AiPageState extends State<AiPage> {
                     FilledButton.icon(
                       onPressed: _wearToday,
                       icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Wear Today'),
+                      label: const Text('Wear This Outfit'),
                     ),
                   ],
                 ),

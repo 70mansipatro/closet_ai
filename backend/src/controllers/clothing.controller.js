@@ -1,7 +1,8 @@
 import { AppError } from '../utils/appError.js';
-import { createClothingSchema, updateClothingSchema } from '../validators/clothing.validator.js';
+import { createClothingSchema, updateClothingSchema, wearClothingSchema } from '../validators/clothing.validator.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinary.service.js';
 import { analyzeClothingImage, buildClothingPayload, validateAnalysisConfig } from '../services/clothing.service.js';
+import { markClothingWorn } from '../services/wear.service.js';
 import {
   createClothingItem,
   deleteClothingItem,
@@ -173,6 +174,28 @@ export const analyzeClothing = async (req, res, next) => {
         publicId: uploadResult?.public_id || '',
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const markClothingAsWorn = async (req, res, next) => {
+  try {
+    const { error, value } = wearClothingSchema.validate(req.body || {});
+    if (error) {
+      throw new AppError(error.details[0].message, 400);
+    }
+
+    const { clothing, wearHistory } = await markClothingWorn({
+      userId: req.user._id,
+      clothingId: req.params.id,
+      occasion: value.occasion,
+      weather: value.weather,
+      rating: value.rating,
+      notes: value.notes,
+    });
+
+    res.status(200).json({ success: true, data: { clothing, wearHistory } });
   } catch (error) {
     next(error);
   }

@@ -16,12 +16,13 @@ const allowedLaundryStatuses = ['clean', 'dirty', 'washing', 'drying', 'ironing'
 const normalizePayload = (payload = {}) => {
   const normalized = { ...payload };
 
+  // wearCount/lastWorn are backend-owned (see services/wear.service.js) and
+  // must never be settable through the create/update clothing endpoints.
+  delete normalized.wearCount;
+  delete normalized.lastWorn;
+
   if (normalized.purchasePrice !== undefined && normalized.purchasePrice !== '') {
     normalized.purchasePrice = Number(normalized.purchasePrice);
-  }
-
-  if (normalized.wearCount !== undefined && normalized.wearCount !== '') {
-    normalized.wearCount = Number(normalized.wearCount);
   }
 
   if (normalized.favorite !== undefined) {
@@ -30,10 +31,6 @@ const normalizePayload = (payload = {}) => {
 
   if (normalized.purchaseDate) {
     normalized.purchaseDate = new Date(normalized.purchaseDate);
-  }
-
-  if (normalized.lastWorn) {
-    normalized.lastWorn = new Date(normalized.lastWorn);
   }
 
   if (normalized.category) {
@@ -283,6 +280,7 @@ export const buildClothingPayload = async ({ payload, imageUrl = '', publicId = 
     userId,
     imageUrl,
     publicId,
+    name: normalized.name || '',
     category: normalized.category || aiAnalysis.category || 'other',
     subCategory: normalized.subCategory || aiAnalysis.subCategory || '',
     color: normalized.color || aiAnalysis.color || '',
@@ -297,8 +295,7 @@ export const buildClothingPayload = async ({ payload, imageUrl = '', publicId = 
     purchasePrice: normalized.purchasePrice || 0,
     favorite: normalized.favorite ?? false,
     laundryStatus: normalized.laundryStatus || 'clean',
-    wearCount: normalized.wearCount || 0,
-    lastWorn: normalized.lastWorn || undefined,
     notes: normalized.notes || '',
+    // wearCount/lastWorn deliberately omitted — backend-owned, see wear.service.js
   };
 };

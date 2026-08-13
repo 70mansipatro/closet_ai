@@ -51,6 +51,7 @@ import '../../features/subscription/presentation/pages/subscription_page.dart';
 import '../../features/subscription/presentation/pages/subscription_success_page.dart';
 import '../../features/trip/presentation/pages/trip_page.dart';
 import '../../features/wardrobe/domain/wardrobe_item.dart';
+import '../../features/wardrobe/presentation/pages/wardrobe_detail_page.dart';
 import '../../features/wardrobe/presentation/pages/wardrobe_form_page.dart';
 import '../../features/wardrobe/presentation/pages/wardrobe_page.dart';
 import '../../widgets/app_shell.dart';
@@ -128,6 +129,15 @@ final appRouter = GoRouter(
               item: item,
               initialCategory: initialCategory,
             );
+          },
+        ),
+        GoRoute(
+          path: '/wardrobe/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            final extra = state.extra;
+            final initialItem = extra is WardrobeItem ? extra : null;
+            return ClothingDetailPage(itemId: id, initialItem: initialItem);
           },
         ),
         GoRoute(path: '/ai', builder: (context, state) => const AiHomePage()),

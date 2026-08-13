@@ -74,6 +74,13 @@ export const updateClothingItem = async ({ userId, id, updateData }) => {
   return clothing;
 };
 
+export const incrementWearCount = async ({ userId, id, wornAt }) =>
+  Clothing.findOneAndUpdate(
+    { _id: id, userId },
+    { $set: { lastWorn: wornAt || new Date() }, $inc: { wearCount: 1 } },
+    { new: true },
+  );
+
 export const deleteClothingItem = async ({ userId, id }) => {
   const clothing = await Clothing.findOne({ _id: id, userId });
   if (!clothing) return null;

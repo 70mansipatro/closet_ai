@@ -9,6 +9,7 @@ test('buildClothingPayload normalizes and defaults wardrobe fields', async () =>
       favorite: 'true',
       purchasePrice: '49.99',
       wearCount: '3',
+      lastWorn: '2026-08-01',
     },
     userId: '64d2f5f10d4f5c9c8e4f8a12',
     aiAnalysis: { category: 'dress', season: 'summer' },
@@ -17,8 +18,11 @@ test('buildClothingPayload normalizes and defaults wardrobe fields', async () =>
   assert.equal(payload.category, 'top');
   assert.equal(payload.favorite, true);
   assert.equal(payload.purchasePrice, 49.99);
-  assert.equal(payload.wearCount, 3);
   assert.equal(payload.season, 'summer');
+  // wearCount/lastWorn are backend-owned (see services/wear.service.js) and
+  // must never be settable through create/update — even if a client tries.
+  assert.equal(payload.wearCount, undefined);
+  assert.equal(payload.lastWorn, undefined);
 });
 
 test('parseJsonFromText extracts JSON from markdown-wrapped Gemini output', () => {

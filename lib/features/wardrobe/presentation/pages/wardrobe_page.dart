@@ -1,12 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../application/wardrobe_state.dart';
 import '../../domain/wardrobe_item.dart';
 import '../widgets/platform_image_preview.dart';
+
+final _cardDateFormat = DateFormat('d MMM yyyy');
+
+Color _laundryBadgeColor(String status) {
+  switch (status.toLowerCase()) {
+    case 'clean':
+    case 'ready':
+      return AppColors.success;
+    case 'dirty':
+    case 'repair':
+      return AppColors.error;
+    default:
+      return AppColors.orange;
+  }
+}
+
+String _formatLastWorn(String? lastWorn) {
+  if (lastWorn == null || lastWorn.isEmpty) return 'Never worn';
+  final parsed = DateTime.tryParse(lastWorn);
+  if (parsed == null) return 'Never worn';
+  return _cardDateFormat.format(parsed.toLocal());
+}
 
 class WardrobePage extends ConsumerStatefulWidget {
   const WardrobePage({super.key});
@@ -511,13 +534,13 @@ class EmptyState extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Your wardrobe is ready for its first piece',
+                    'Your wardrobe is empty',
                     style: Theme.of(context).textTheme.titleMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add a favorite outfit or a new essential and it will appear instantly.',
+                    'Add your first clothing item to get started.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -525,7 +548,7 @@ class EmptyState extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: onAdd,
                     icon: const Icon(Icons.add_outlined),
-                    label: const Text('Add clothing'),
+                    label: const Text('+ Add Clothing'),
                   ),
                 ],
               ),
@@ -549,74 +572,96 @@ class WardrobeCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showDetails(context),
+        onTap: () => context.push('/wardrobe/${item.id}', extra: item),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: item.imageUrl.isNotEmpty
-                  ? PlatformImagePreview(
-                      imageUrl: item.imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      placeholder: Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: const Center(
-                          child: Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 40,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  item.imageUrl.isNotEmpty
+                      ? PlatformImagePreview(
+                          imageUrl: item.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          placeholder: Container(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 40,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: const Center(
+                            child: Icon(Icons.image_outlined, size: 48),
                           ),
                         ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        shape: BoxShape.circle,
                       ),
-                    )
-                  : Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(Icons.image_outlined, size: 48),
-                      ),
-                    ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.category.toUpperCase(),
-                          style: theme.textTheme.titleSmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Icon(
+                      child: Icon(
                         item.favorite
                             ? Icons.favorite_rounded
                             : Icons.favorite_border_rounded,
-                        color: item.favorite ? theme.colorScheme.primary : null,
+                        color: item.favorite ? AppColors.pink : Colors.white,
+                        size: 18,
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: _LaundryBadge(status: item.laundryStatus),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.displayName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          item.brand.isEmpty ? 'No brand' : item.brand,
+                          '${item.category.toUpperCase()} • ${item.brand.isEmpty ? 'No brand' : item.brand}',
+                          style: theme.textTheme.bodySmall,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                         onPressed: onDelete,
-                        icon: const Icon(Icons.delete_outline_rounded),
+                        icon: const Icon(Icons.delete_outline_rounded, size: 18),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
@@ -624,24 +669,39 @@ class WardrobeCard extends StatelessWidget {
                       Chip(
                         label: Text(item.color.isEmpty ? 'Mixed' : item.color),
                         visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: EdgeInsets.zero,
                       ),
                       Chip(
                         label: Text(item.season),
                         visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: EdgeInsets.zero,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Laundry: ${item.laundryStatus}',
-                    style: theme.textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.checkroom_rounded, size: 14),
+                      const SizedBox(width: 4),
+                      Text('Worn ${item.wearCount}×', style: theme.textTheme.bodySmall),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Worn ${item.wearCount} times',
-                    style: theme.textTheme.bodySmall,
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.event_outlined, size: 14),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          _formatLastWorn(item.lastWorn),
+                          style: theme.textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -651,219 +711,29 @@ class WardrobeCard extends StatelessWidget {
       ),
     );
   }
-
-  Future<void> _showDetails(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.72,
-          maxChildSize: 0.95,
-          minChildSize: 0.5,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-              ),
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (item.imageUrl.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: PlatformImagePreview(
-                        imageUrl: item.imageUrl,
-                        height: 220,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: Container(
-                          height: 220,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 40,
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    Container(
-                      height: 220,
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.image_outlined, size: 48),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.category.toUpperCase(),
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      Icon(
-                        item.favorite
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        color: item.favorite
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _InfoChip(
-                        label: 'Color',
-                        value: item.color.isEmpty ? 'Not set' : item.color,
-                      ),
-                      _InfoChip(label: 'Season', value: item.season),
-                      _InfoChip(
-                        label: 'Brand',
-                        value: item.brand.isEmpty ? 'Not set' : item.brand,
-                      ),
-                      _InfoChip(
-                        label: 'Size',
-                        value: item.size.isEmpty ? 'Not set' : item.size,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _DetailRow(
-                    label: 'Wear Count',
-                    value: item.wearCount.toString(),
-                  ),
-                  _DetailRow(
-                    label: 'Last Worn',
-                    value: item.lastWorn?.isNotEmpty == true
-                        ? item.lastWorn!
-                        : 'Not set',
-                  ),
-                  _DetailRow(
-                    label: 'Laundry Status',
-                    value: item.laundryStatus,
-                  ),
-                  if (item.notes.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'Notes',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.notes,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.of(sheetContext).pop();
-                            context.push('/wardrobe/form', extra: item);
-                          },
-                          icon: const Icon(Icons.edit_outlined),
-                          label: const Text('Edit'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.of(sheetContext).pop();
-                            onDelete();
-                          },
-                          icon: const Icon(Icons.delete_outline_rounded),
-                          label: const Text('Delete'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 }
 
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.label, required this.value});
+class _LaundryBadge extends StatelessWidget {
+  const _LaundryBadge({required this.status});
 
-  final String label;
-  final String value;
+  final String status;
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text('$label: $value'),
-      visualDensity: VisualDensity.compact,
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
+    final color = _laundryBadgeColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        status.isEmpty ? 'clean' : status,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -883,6 +753,7 @@ class WardrobeListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
+        onTap: () => context.push('/wardrobe/${item.id}', extra: item),
         leading: item.imageUrl.isNotEmpty
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -899,13 +770,37 @@ class WardrobeListTile extends StatelessWidget {
                 height: 48,
                 child: Icon(Icons.image_outlined),
               ),
-        title: Text(item.category.toUpperCase()),
-        subtitle: Text(
-          '${item.brand.isEmpty ? 'No brand' : item.brand} • ${item.season}',
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                item.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              item.favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              size: 18,
+              color: item.favorite ? AppColors.pink : null,
+            ),
+          ],
         ),
-        trailing: IconButton(
-          onPressed: onDelete,
-          icon: const Icon(Icons.delete_outline_rounded),
+        subtitle: Text(
+          '${item.category.toUpperCase()} • ${item.brand.isEmpty ? 'No brand' : item.brand} • Worn ${item.wearCount}× • ${_formatLastWorn(item.lastWorn)}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _LaundryBadge(status: item.laundryStatus),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline_rounded),
+            ),
+          ],
         ),
       ),
     );
@@ -1112,19 +1007,49 @@ class SortSheet extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               ListTile(
-                title: const Text('Newest first'),
+                leading: const Icon(Icons.schedule_outlined),
+                title: const Text('Recently Added'),
+                selected: currentSortBy == 'createdAt' && currentSortOrder == 'desc',
                 onTap: () => Navigator.of(
                   context,
                 ).pop({'sortBy': 'createdAt', 'sortOrder': 'desc'}),
               ),
               ListTile(
-                title: const Text('Oldest first'),
+                leading: const Icon(Icons.trending_up_outlined),
+                title: const Text('Most Worn'),
+                selected: currentSortBy == 'wearCount' && currentSortOrder == 'desc',
                 onTap: () => Navigator.of(
                   context,
-                ).pop({'sortBy': 'createdAt', 'sortOrder': 'asc'}),
+                ).pop({'sortBy': 'wearCount', 'sortOrder': 'desc'}),
               ),
               ListTile(
-                title: const Text('Favorites first'),
+                leading: const Icon(Icons.trending_down_outlined),
+                title: const Text('Least Worn'),
+                selected: currentSortBy == 'wearCount' && currentSortOrder == 'asc',
+                onTap: () => Navigator.of(
+                  context,
+                ).pop({'sortBy': 'wearCount', 'sortOrder': 'asc'}),
+              ),
+              ListTile(
+                leading: const Icon(Icons.history_outlined),
+                title: const Text('Recently Worn'),
+                selected: currentSortBy == 'lastWorn' && currentSortOrder == 'desc',
+                onTap: () => Navigator.of(
+                  context,
+                ).pop({'sortBy': 'lastWorn', 'sortOrder': 'desc'}),
+              ),
+              ListTile(
+                leading: const Icon(Icons.sort_by_alpha_outlined),
+                title: const Text('Name A-Z'),
+                selected: currentSortBy == 'name' && currentSortOrder == 'asc',
+                onTap: () => Navigator.of(
+                  context,
+                ).pop({'sortBy': 'name', 'sortOrder': 'asc'}),
+              ),
+              ListTile(
+                leading: const Icon(Icons.favorite_outline_rounded),
+                title: const Text('Favorites'),
+                selected: currentSortBy == 'favorite' && currentSortOrder == 'desc',
                 onTap: () => Navigator.of(
                   context,
                 ).pop({'sortBy': 'favorite', 'sortOrder': 'desc'}),

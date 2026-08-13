@@ -9,6 +9,7 @@ import {
   updateOutfitRecord,
 } from '../repositories/outfit.repository.js';
 import Clothing from '../models/Clothing.js';
+import { markManyClothingWorn } from '../services/wear.service.js';
 
 const normalizeLaundryStatus = (value) => (value ?? '').toString().trim().toLowerCase();
 const UNAVAILABLE_LAUNDRY_STATUSES = new Set(['dirty', 'washing', 'repair', 'in-use', 'drying', 'ironing']);
@@ -147,23 +148,24 @@ export const wearOutfit = async (req, res, next) => {
       .filter(Boolean);
 
     const now = new Date();
-    const result = itemIds.length > 0
-      ? await Clothing.updateMany(
-          { _id: { $in: itemIds }, userId: req.user._id },
-          { $set: { lastWorn: now }, $inc: { wearCount: 1 } },
-        )
-      : { matchedCount: 0, modifiedCount: 0 };
+    const results = await markManyClothingWorn({
+      userId: req.user._id,
+      clothingIds: itemIds,
+      outfitId,
+      occasion: outfit.occasion || '',
+      weather: outfit.weather || '',
+      wornAt: now,
+    });
 
     console.log('[OUTFIT] Wear API payload', { outfitId, itemIds, now: now.toISOString() });
-    console.log('[OUTFIT] Updated lastWorn', { outfitId, lastWorn: now.toISOString(), updatedCount: result.modifiedCount || result.matchedCount || 0 });
-    console.log('[OUTFIT] Updated wearCount', { outfitId, updatedCount: result.modifiedCount || result.matchedCount || 0 });
+    console.log('[OUTFIT] Wear transaction complete', { outfitId, updatedCount: results.length });
 
     res.status(200).json({
       success: true,
       message: 'Outfit marked as worn.',
       data: {
         outfitId,
-        updatedCount: result.modifiedCount || result.matchedCount || 0,
+        updatedCount: results.length,
         lastWorn: now.toISOString(),
       },
     });

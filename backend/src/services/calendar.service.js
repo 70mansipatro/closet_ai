@@ -1,10 +1,10 @@
 import { AppError } from '../utils/appError.js';
 import { findOutfitById } from '../repositories/outfit.repository.js';
-import { findClothingById, updateClothingItem } from '../repositories/clothing.repository.js';
-import { createWearHistory, findUserOutfitHistoryOnDate } from '../repositories/history.repository.js';
+import { findUserOutfitHistoryOnDate } from '../repositories/history.repository.js';
 import { createCalendarEntry, findCalendarByDate, updateCalendarEntry } from '../repositories/calendar.repository.js';
 import Clothing from '../models/Clothing.js';
 import { syncOutfitReminder, cancelOutfitReminder } from './reminder.service.js';
+import { markManyClothingWorn } from './wear.service.js';
 
 const syncOutfitReminderSafely = async ({ userId, calendarEntry }) => {
   try {
@@ -76,18 +76,18 @@ export const wearToday = async ({ userId, outfitId }) => {
 
   const now = new Date();
 
-  // update clothing wearCount and lastWorn
-  if (clothingIds.length > 0) {
-    await Clothing.updateMany({ _id: { $in: clothingIds }, userId }, { $set: { lastWorn: now }, $inc: { wearCount: 1 } });
-  }
-
-  // create wear history entries for each clothing id
-  const created = [];
-  for (const clothingId of clothingIds) {
-    // prevent duplicate for clothing+outfit+date
-    const exists = await createWearHistory({ payload: { userId, clothingId, outfitId, date: today, occasion: outfit?.occasion || '', weather: outfit?.weather || '', notes: '' } });
-    created.push(exists);
-  }
+  // Atomically bump wearCount/lastWorn, flip laundryStatus clean->dirty, and
+  // write a WearHistory row per item — the same transaction Wardrobe's
+  // "Mark as Worn" and AI's "Wear This Outfit" use, so Analytics stays
+  // consistent regardless of which entry point wore the outfit.
+  const created = await markManyClothingWorn({
+    userId,
+    clothingIds,
+    outfitId,
+    occasion: outfit?.occasion || '',
+    weather: outfit?.weather || '',
+    wornAt: now,
+  });
 
   // mark calendar entry for today as Worn
   const calendarEntry = await findCalendarByDate({ userId, date: today });

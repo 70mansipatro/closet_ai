@@ -26,6 +26,7 @@ class WardrobeFormPage extends ConsumerStatefulWidget {
 
 class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _titleController = TextEditingController();
   final _brandController = TextEditingController();
   final _sizeController = TextEditingController();
@@ -52,6 +53,7 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
     final initialCategory = widget.initialCategory;
 
     if (item != null) {
+      _nameController.text = item.name;
       _titleController.text = item.subCategory;
       _brandController.text = item.brand;
       _sizeController.text = item.size;
@@ -102,6 +104,7 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _titleController.dispose();
     _brandController.dispose();
     _sizeController.dispose();
@@ -198,6 +201,7 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
 
     try {
       final payload = {
+        'name': _nameController.text.trim(),
         'category': _category,
         'subCategory': _titleController.text.trim(),
         'color': _colorController.text.trim(),
@@ -232,6 +236,15 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
             );
       }
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.item == null
+                ? 'Clothing added to your wardrobe.'
+                : 'Clothing updated successfully.',
+          ),
+        ),
+      );
       context.pop();
     } catch (error) {
       if (!mounted) return;
@@ -343,6 +356,16 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
                 onPressed: _isAnalyzing ? null : _analyzeImage,
               ),
               const SizedBox(height: 24),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'e.g. Zara Black Dress',
+                ),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _category,
                 items: const [
@@ -415,10 +438,39 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
               ),
               const SizedBox(height: 12),
               TextFormField(
+                controller: _sizeController,
+                decoration: const InputDecoration(labelText: 'Size'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
                 controller: _occasionController,
                 decoration: const InputDecoration(labelText: 'Occasion'),
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _laundryStatus,
+                items: const [
+                  DropdownMenuItem(value: 'clean', child: Text('Clean')),
+                  DropdownMenuItem(value: 'dirty', child: Text('Dirty')),
+                  DropdownMenuItem(value: 'washing', child: Text('Washing')),
+                  DropdownMenuItem(value: 'drying', child: Text('Drying')),
+                  DropdownMenuItem(value: 'ironing', child: Text('Ironing')),
+                  DropdownMenuItem(value: 'ready', child: Text('Ready')),
+                  DropdownMenuItem(value: 'in-use', child: Text('In use')),
+                  DropdownMenuItem(value: 'repair', child: Text('Repair')),
+                ],
+                onChanged: (value) =>
+                    setState(() => _laundryStatus = value ?? 'clean'),
+                decoration: const InputDecoration(labelText: 'Laundry Status'),
+              ),
+              const SizedBox(height: 4),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Favorite'),
+                value: _favorite,
+                onChanged: (value) => setState(() => _favorite = value),
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _priceController,
                 keyboardType: const TextInputType.numberWithOptions(
@@ -436,34 +488,6 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
                 decoration: const InputDecoration(labelText: 'Notes'),
               ),
               const SizedBox(height: 24),
-              if (widget.item != null) ...[
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Wear History',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        _ReadOnlyInfoRow(
-                          label: 'Last Worn',
-                          value: widget.item!.lastWorn?.isNotEmpty == true
-                              ? widget.item!.lastWorn!
-                              : 'Not set',
-                        ),
-                        _ReadOnlyInfoRow(
-                          label: 'Wear Count',
-                          value: widget.item!.wearCount.toString(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
               GradientButton(
                 label: _isSubmitting ? 'Saving…' : 'Save',
                 icon: Icons.save_outlined,
@@ -478,35 +502,3 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
   }
 }
 
-class _ReadOnlyInfoRow extends StatelessWidget {
-  const _ReadOnlyInfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: Text(value, style: theme.textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-}

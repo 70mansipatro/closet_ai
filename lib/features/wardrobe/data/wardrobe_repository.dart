@@ -174,6 +174,28 @@ class WardrobeRepository {
     return Map<String, dynamic>.from(response.data as Map);
   }
 
+  Future<Map<String, dynamic>> fetchItem(String id) async {
+    final response = await _dio.get('/clothes/$id');
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  Future<Map<String, dynamic>> markAsWorn({
+    required String id,
+    required String occasion,
+    int? rating,
+    String? notes,
+  }) async {
+    final response = await _dio.post(
+      '/clothes/$id/wear',
+      data: {
+        'occasion': occasion,
+        if (rating != null) 'rating': rating,
+        if (notes != null && notes.isNotEmpty) 'notes': notes,
+      },
+    );
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
   Future<Map<String, dynamic>> analyzeImage({
     File? imageFile,
     Uint8List? imageBytes,
