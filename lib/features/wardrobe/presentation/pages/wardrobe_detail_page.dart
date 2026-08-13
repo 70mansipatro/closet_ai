@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import '../../../../core/services/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../widgets/gradient_button.dart';
+import '../../../../widgets/section_card.dart';
 import '../../../history/data/history_repository.dart';
 import '../../application/wardrobe_state.dart';
 import '../../data/wardrobe_repository.dart';
@@ -90,19 +93,33 @@ class _ClothingDetailPageState extends ConsumerState<ClothingDetailPage> {
     }
   }
 
+  // Every field the item currently has must be resent on every update — the
+  // backend rebuilds the full document from this payload (see
+  // buildClothingPayload), so omitting a field here would silently wipe it
+  // (e.g. a favorite toggle would otherwise erase style/occasions/etc).
   Map<String, dynamic> _basePayload(WardrobeItem item) => {
     'name': item.name,
     'category': item.category,
     'subCategory': item.subCategory,
     'color': item.color,
+    'secondaryColors': jsonEncode(item.secondaryColors),
+    'pattern': item.pattern,
+    'material': item.material,
+    'style': item.style,
     'season': item.season,
     'occasion': item.occasion,
+    'occasions': jsonEncode(item.occasions),
+    'weatherSuitability': jsonEncode(item.weatherSuitability),
+    'fit': item.fit,
     'brand': item.brand,
     'size': item.size,
     'purchasePrice': item.purchasePrice,
+    if (item.purchaseDate != null) 'purchaseDate': item.purchaseDate,
     'favorite': item.favorite,
     'laundryStatus': item.laundryStatus,
     'notes': item.notes,
+    'aiAnalyzed': item.aiAnalyzed,
+    if (item.aiAnalyzed) 'aiConfidence': jsonEncode(item.aiConfidence),
   };
 
   Future<void> _toggleFavorite() async {
@@ -178,19 +195,6 @@ class _ClothingDetailPageState extends ConsumerState<ClothingDetailPage> {
           content: Text('Could not delete this item. Please try again.'),
         ),
       );
-    }
-  }
-
-  Color _laundryColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'clean':
-      case 'ready':
-        return AppColors.success;
-      case 'dirty':
-      case 'repair':
-        return AppColors.error;
-      default:
-        return AppColors.orange;
     }
   }
 
@@ -273,6 +277,16 @@ class _ClothingDetailPageState extends ConsumerState<ClothingDetailPage> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
+                            if (item.aiAnalyzed) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '✨ Analyzed by ClosetAI',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.purple,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -287,22 +301,57 @@ class _ClothingDetailPageState extends ConsumerState<ClothingDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _SectionCard(
-                    title: 'Information',
+                  SectionCard(
+                    title: 'Appearance',
+                    icon: Icons.palette_outlined,
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
                         _InfoChip(label: 'Color', value: item.color.isEmpty ? 'Not set' : item.color),
-                        _InfoChip(label: 'Season', value: item.season),
-                        _InfoChip(label: 'Brand', value: item.brand.isEmpty ? 'Not set' : item.brand),
-                        _InfoChip(label: 'Size', value: item.size.isEmpty ? 'Not set' : item.size),
-                        _InfoChip(label: 'Occasion', value: item.occasion.isEmpty ? 'Not set' : item.occasion),
+                        _InfoChip(label: 'Pattern', value: item.pattern.isEmpty ? 'Not set' : item.pattern),
+                        _InfoChip(label: 'Material', value: item.material.isEmpty ? 'Not set' : item.material),
+                        _InfoChip(label: 'Style', value: item.style.isEmpty ? 'Not set' : item.style),
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _SectionCard(
+                  SectionCard(
+                    title: 'Usage',
+                    icon: Icons.wb_sunny_outlined,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _InfoChip(label: 'Season', value: item.season),
+                        _InfoChip(
+                          label: 'Occasion',
+                          value: item.occasions.isNotEmpty ? item.occasions.join(', ') : (item.occasion.isEmpty ? 'Not set' : item.occasion),
+                        ),
+                        _InfoChip(
+                          label: 'Weather',
+                          value: item.weatherSuitability.isNotEmpty ? item.weatherSuitability.join(', ') : 'Not set',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SectionCard(
+                    title: 'Wardrobe',
+                    icon: Icons.checkroom_outlined,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _InfoChip(label: 'Size', value: item.size.isEmpty ? 'Not set' : item.size),
+                        _InfoChip(label: 'Fit', value: item.fit.isEmpty ? 'Not set' : item.fit),
+                        _InfoChip(label: 'Brand', value: item.brand.isEmpty ? 'Not set' : item.brand),
+                        _InfoChip(label: 'Laundry', value: item.laundryStatus),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SectionCard(
                     title: 'Wear Statistics',
                     child: Row(
                       children: [
@@ -328,33 +377,12 @@ class _ClothingDetailPageState extends ConsumerState<ClothingDetailPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  _SectionCard(
-                    title: 'Laundry',
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: _laundryColor(item.laundryStatus),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          item.laundryStatus[0].toUpperCase() + item.laundryStatus.substring(1),
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
                   if (item.notes.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    _SectionCard(title: 'Notes', child: Text(item.notes)),
+                    SectionCard(title: 'Notes', child: Text(item.notes)),
                   ],
                   const SizedBox(height: 12),
-                  _SectionCard(
+                  SectionCard(
                     title: 'Wear History',
                     child: _isLoadingHistory && _history.isEmpty
                         ? const Padding(
@@ -406,30 +434,6 @@ class _ClothingDetailPageState extends ConsumerState<ClothingDetailPage> {
                 ],
               ),
             ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      ),
     );
   }
 }

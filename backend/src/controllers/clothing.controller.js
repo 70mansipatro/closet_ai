@@ -21,21 +21,20 @@ export const createClothing = async (req, res, next) => {
 
     let imageUrl = value.imageUrl || '';
     let publicId = value.publicId || '';
-    let aiAnalysis = {};
 
     if (req.file) {
-      aiAnalysis = await analyzeClothingImage(req.file.buffer);
       const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/clothing');
       imageUrl = uploadResult.secure_url;
       publicId = uploadResult.public_id;
     }
 
+    // AI analysis already happened (or was skipped) client-side via
+    // POST /clothes/analyze before Save was pressed — never re-run it here.
     const payload = await buildClothingPayload({
       payload: value,
       imageUrl,
       publicId,
       userId: req.user._id,
-      aiAnalysis,
     });
 
     const clothing = await createClothingItem(payload);
@@ -110,18 +109,18 @@ export const updateClothing = async (req, res, next) => {
       throw new AppError('Clothing item not found', 404);
     }
 
-    let aiAnalysis = {};
     let imageUrl = clothing.imageUrl;
     let publicId = clothing.publicId;
 
     if (req.file) {
-      aiAnalysis = await analyzeClothingImage(req.file.buffer);
-      if (clothing.publicId) {
-        await deleteFromCloudinary(clothing.publicId);
-      }
+      // Upload the replacement first, then remove the old asset only after
+      // the new one is safely stored — never leave the item without an image.
       const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/clothing');
       imageUrl = uploadResult.secure_url;
       publicId = uploadResult.public_id;
+      if (clothing.publicId) {
+        await deleteFromCloudinary(clothing.publicId);
+      }
     }
 
     const payload = await buildClothingPayload({
@@ -129,7 +128,6 @@ export const updateClothing = async (req, res, next) => {
       imageUrl,
       publicId,
       userId: req.user._id,
-      aiAnalysis,
     });
 
     const updatedClothing = await updateClothingItem({ userId: req.user._id, id: req.params.id, updateData: payload });
@@ -141,20 +139,6 @@ export const updateClothing = async (req, res, next) => {
 
 export const analyzeClothing = async (req, res, next) => {
   try {
-    console.log('[BACKEND] Clothing analyze request received', {
-      path: req.originalUrl,
-      method: req.method,
-      userId: req.user?._id,
-      hasFile: !!req.file,
-      file: req.file
-        ? {
-            originalname: req.file.originalname,
-            mimetype: req.file.mimetype,
-            size: req.file.size,
-          }
-        : null,
-    });
-
     if (!req.file) {
       throw new AppError('Image file is required for analysis', 400);
     }
@@ -164,16 +148,12 @@ export const analyzeClothing = async (req, res, next) => {
       throw new AppError('Missing required configuration for AI analysis', 500, { missing: config.missing });
     }
 
+    // Analysis-only: the image is not uploaded to Cloudinary here. It's
+    // uploaded exactly once, when the user presses Save (createClothing /
+    // updateClothing), so a re-analyzed or discarded image never leaves an
+    // orphaned asset behind.
     const aiAnalysis = await analyzeClothingImage(req.file.buffer);
-    const uploadResult = await uploadToCloudinary(req.file.buffer, 'closetai/analysis');
-    res.status(200).json({
-      success: true,
-      data: {
-        ...aiAnalysis,
-        imageUrl: uploadResult?.secure_url || '',
-        publicId: uploadResult?.public_id || '',
-      },
-    });
+    res.status(200).json({ success: true, data: aiAnalysis });
   } catch (error) {
     next(error);
   }

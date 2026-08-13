@@ -1,17 +1,37 @@
 import { AppError } from '../utils/appError.js';
+import {
+  CATEGORY_OPTIONS,
+  CATEGORY_ALIASES,
+  SEASON_OPTIONS,
+  SEASON_ALIASES,
+  STYLE_OPTIONS,
+  PATTERN_OPTIONS,
+  PATTERN_ALIASES,
+  MATERIAL_OPTIONS,
+  OCCASION_OPTIONS,
+  OCCASION_ALIASES,
+  WEATHER_OPTIONS,
+  FIT_OPTIONS,
+  FIT_ALIASES,
+  LAUNDRY_STATUS_OPTIONS,
+  normalizeEnumValue,
+  normalizeEnumList,
+} from '../constants/clothingOptions.js';
 
-const allowedCategories = [
-  'top',
-  'bottom',
-  'dress',
-  'outerwear',
-  'shoes',
-  'accessory',
-  'other',
-];
+const allowedCategories = CATEGORY_OPTIONS;
+const allowedSeasons = SEASON_OPTIONS;
+const allowedLaundryStatuses = LAUNDRY_STATUS_OPTIONS;
 
-const allowedSeasons = ['spring', 'summer', 'autumn', 'winter', 'all-season'];
-const allowedLaundryStatuses = ['clean', 'dirty', 'washing', 'drying', 'ironing', 'ready', 'in-use', 'repair'];
+const isDebug = process.env.NODE_ENV !== 'production';
+const debugLog = (...args) => {
+  if (isDebug) console.log(...args);
+};
+
+const toStringArray = (value) => {
+  if (Array.isArray(value)) return value.filter((item) => typeof item === 'string' && item.trim());
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  return [];
+};
 
 const normalizePayload = (payload = {}) => {
   const normalized = { ...payload };
@@ -27,6 +47,10 @@ const normalizePayload = (payload = {}) => {
 
   if (normalized.favorite !== undefined) {
     normalized.favorite = normalized.favorite === true || normalized.favorite === 'true';
+  }
+
+  if (normalized.aiAnalyzed !== undefined) {
+    normalized.aiAnalyzed = normalized.aiAnalyzed === true || normalized.aiAnalyzed === 'true';
   }
 
   if (normalized.purchaseDate) {
@@ -53,6 +77,10 @@ const normalizePayload = (payload = {}) => {
       throw new AppError('Invalid laundry status', 400);
     }
   }
+
+  normalized.secondaryColors = toStringArray(normalized.secondaryColors);
+  normalized.occasions = toStringArray(normalized.occasions);
+  normalized.weatherSuitability = toStringArray(normalized.weatherSuitability);
 
   return normalized;
 };
@@ -87,16 +115,42 @@ export const parseJsonFromText = (text = '') => {
   }
 };
 
+const normalizeConfidence = (confidence = {}) => {
+  const fields = ['category', 'color', 'pattern', 'material', 'style', 'season'];
+  const normalized = {};
+  for (const field of fields) {
+    const value = Number(confidence?.[field]);
+    normalized[field] = Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : null;
+  }
+  return normalized;
+};
+
+const nonEmptyString = (value) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+
+/**
+ * Normalizes raw Gemini JSON into the app's controlled vocabulary. Anything
+ * the model returns that isn't a recognized value becomes null (or an empty
+ * array for list fields) rather than being guessed at — the UI treats null
+ * as "AI could not determine this" and keeps the field editable.
+ */
 export const normalizeAnalysis = (analysis = {}) => ({
-  category: typeof analysis.category === 'string' && analysis.category.trim() ? analysis.category.trim() : 'other',
-  subCategory: typeof analysis.subCategory === 'string' ? analysis.subCategory.trim() : '',
-  color: typeof analysis.color === 'string' && analysis.color.trim() ? analysis.color.trim() : 'neutral',
-  secondaryColor: typeof analysis.secondaryColor === 'string' ? analysis.secondaryColor.trim() : '',
-  pattern: typeof analysis.pattern === 'string' && analysis.pattern.trim() ? analysis.pattern.trim() : 'solid',
-  fabric: typeof analysis.fabric === 'string' && analysis.fabric.trim() ? analysis.fabric.trim() : 'unknown',
-  brand: typeof analysis.brand === 'string' ? analysis.brand.trim() : '',
-  season: typeof analysis.season === 'string' && analysis.season.trim() ? analysis.season.trim() : 'all-season',
-  occasion: typeof analysis.occasion === 'string' && analysis.occasion.trim() ? analysis.occasion.trim() : 'casual',
+  name: nonEmptyString(analysis.name) || '',
+  category: normalizeEnumValue(analysis.category, allowedCategories, CATEGORY_ALIASES),
+  subCategory: nonEmptyString(analysis.subcategory ?? analysis.subCategory) || '',
+  color: nonEmptyString(analysis.color) || null,
+  // Colors are free-form (no fixed enum) — just clean and dedupe.
+  secondaryColors: [...new Set(toStringArray(analysis.secondaryColors).map((c) => c.trim().toLowerCase()))],
+  pattern: normalizeEnumValue(analysis.pattern, PATTERN_OPTIONS, PATTERN_ALIASES),
+  material: normalizeEnumValue(analysis.material, MATERIAL_OPTIONS),
+  style: normalizeEnumValue(analysis.style, STYLE_OPTIONS),
+  season: normalizeEnumValue(analysis.season, allowedSeasons, SEASON_ALIASES),
+  occasions: normalizeEnumList(toStringArray(analysis.occasions), OCCASION_OPTIONS, OCCASION_ALIASES),
+  weatherSuitability: normalizeEnumList(toStringArray(analysis.weatherSuitability), WEATHER_OPTIONS),
+  fit: normalizeEnumValue(analysis.fit, FIT_OPTIONS, FIT_ALIASES),
+  // Never fabricated — pass through only if Gemini actually returned text.
+  brand: nonEmptyString(analysis.brand),
+  size: nonEmptyString(analysis.size),
+  confidence: normalizeConfidence(analysis.confidence),
 });
 
 export const buildGeminiRequestBody = (prompt, buffer = null) => {
@@ -166,17 +220,62 @@ const extractGeminiText = (responseData) => {
   return null;
 };
 
+const CLOTHING_ANALYSIS_PROMPT = `You are ClosetAI's professional clothing analysis engine.
+
+Analyze ONLY the clothing item visible in the supplied image.
+
+Return ONLY valid JSON. Do not include markdown. Do not include explanations.
+
+Do not guess information that cannot be visually determined. For uncertain values use null.
+
+Never invent: brand, size, price, purchase date, wear count, laundry status.
+
+Detect: clothing category, subcategory, primary color, secondary colors, pattern, likely material, style, likely season, suitable occasions, weather suitability, fit only when visually reasonable, and a short clothing name (e.g. "Black Party Dress").
+
+category must be one of: top, bottom, dress, outerwear, footwear, accessory, activewear, innerwear, other.
+style must be one of: casual, formal, party, sporty, streetwear, traditional, business, minimal, elegant, ethnic.
+pattern must be one of: solid, striped, checked, floral, printed, polka-dot, geometric, abstract, embroidered, other.
+material must be one of: cotton, denim, linen, silk, wool, polyester, leather, rayon, chiffon, velvet, other, unknown.
+season must be one of: spring, summer, autumn, winter, all-season.
+occasions items must be from: casual, office, party, wedding, travel, workout, date, festival, formal, daily-wear.
+weatherSuitability items must be from: hot, warm, mild, cool, cold, rainy.
+fit must be one of: slim, regular, relaxed, oversized, or null.
+
+Return confidence scores from 0 to 100 for AI-detected attributes.
+
+Respond with exactly this JSON shape and nothing else:
+{
+  "name": string,
+  "category": string,
+  "subcategory": string|null,
+  "color": string,
+  "secondaryColors": string[],
+  "pattern": string|null,
+  "material": string|null,
+  "style": string|null,
+  "season": string|null,
+  "occasions": string[],
+  "weatherSuitability": string[],
+  "fit": string|null,
+  "brand": string|null,
+  "size": string|null,
+  "confidence": {
+    "category": number,
+    "color": number,
+    "pattern": number,
+    "material": number,
+    "style": number,
+    "season": number
+  }
+}`;
+
 export const analyzeClothingImage = async (buffer) => {
   const config = validateAnalysisConfig(process.env);
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-
-  console.log('[AI ANALYZE] Starting clothing analysis', {
-    config,
-    apiKeyLoaded: !!apiKey,
-    model,
-    bufferSize: buffer?.length ?? 0,
-  });
+  // 'gemini-2.0-flash' was retired by Google (confirmed via a live 404 during
+  // testing). Use the "-latest" alias so this doesn't go stale again as
+  // Google rolls new stable versions — override with GEMINI_MODEL if needed.
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
   if (!config.isValid) {
     throw new AppError('Missing required configuration for AI analysis', 500, { missing: config.missing });
@@ -188,26 +287,10 @@ export const analyzeClothingImage = async (buffer) => {
 
   validateGeminiModel(model);
 
-  const prompt = [
-    'Analyze the clothing image and return strict JSON only.',
-    'Required fields: category, subCategory, color, secondaryColor, pattern, fabric, brand, season, occasion.',
-    'Use short values and no markdown.',
-  ].join(' ');
-
-  const requestBody = buildGeminiRequestBody(prompt, buffer);
+  const requestBody = buildGeminiRequestBody(CLOTHING_ANALYSIS_PROMPT, buffer);
   const requestUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  console.log('[AI GEMINI REQUEST] Built request', {
-    url: requestUrl,
-    model,
-    apiKeyLoaded: !!apiKey,
-    bodySize: Buffer.byteLength(JSON.stringify(requestBody)),
-    requestPreview: {
-      prompt: prompt.slice(0, 256),
-      imageInlineDataPrefix: requestBody.contents[0].parts[1].inlineData.data.slice(0, 128),
-      imageInlineDataLength: requestBody.contents[0].parts[1].inlineData.data.length,
-    },
-  });
+  debugLog('[AI ANALYZE] Requesting Gemini analysis', { model, bufferSize: buffer?.length ?? 0 });
 
   const response = await fetch(requestUrl, {
     method: 'POST',
@@ -216,46 +299,19 @@ export const analyzeClothingImage = async (buffer) => {
   });
 
   const rawResponseText = await response.text();
-  console.log('[AI GEMINI RESPONSE] Raw response', {
-    url: requestUrl,
-    status: response.status,
-    statusText: response.statusText,
-    rawResponseText: rawResponseText.slice(0, 2000),
-    rawResponseLength: rawResponseText.length,
-  });
   let data;
 
   try {
     data = JSON.parse(rawResponseText);
   } catch (parseError) {
-    console.error('[AI GEMINI RESPONSE] Invalid JSON response', {
-      status: response.status,
-      statusText: response.statusText,
-      rawResponseText,
-      parseError: parseError.message,
-    });
-    throw new AppError(`Gemini response was not valid JSON: ${parseError.message}`, 502, {
-      rawResponseText,
-    });
+    console.error('[AI ANALYZE] Gemini response was not valid JSON', { status: response.status, parseError: parseError.message });
+    throw new AppError(`Gemini response was not valid JSON: ${parseError.message}`, 502, { rawResponseText });
   }
-
-  console.log('[AI GEMINI RESPONSE] Received response', {
-    status: response.status,
-    statusText: response.statusText,
-    rawResponseData: data,
-  });
 
   if (!response.ok) {
     const errorMessage = data?.error?.message || data?.message || `Gemini request failed with status ${response.status}`;
-    const errorDetails = {
-      status: response.status,
-      statusText: response.statusText,
-      rawResponseData: data,
-      requestUrl,
-      model,
-    };
-    console.error('[AI GEMINI RESPONSE] Non-OK status', errorDetails);
-    throw new AppError(errorMessage, 502, errorDetails);
+    console.error('[AI ANALYZE] Gemini request failed', { status: response.status, errorMessage });
+    throw new AppError(errorMessage, 502, { status: response.status, model });
   }
 
   const text = extractGeminiText(data);
@@ -263,12 +319,10 @@ export const analyzeClothingImage = async (buffer) => {
     throw new AppError('Gemini response missing text content', 502, { rawResponseData: data });
   }
 
-  console.log('[AI GEMINI RESPONSE TEXT] Output text preview', { textPreview: text.slice(0, 1024) });
-
   const parsedAnalysis = parseJsonFromText(text);
   const normalizedAnalysis = normalizeAnalysis(parsedAnalysis);
 
-  console.log('[AI ANALYSIS] Parsed and normalized analysis', normalizedAnalysis);
+  debugLog('[AI ANALYZE] Normalized analysis', normalizedAnalysis);
 
   return normalizedAnalysis;
 };
@@ -276,21 +330,35 @@ export const analyzeClothingImage = async (buffer) => {
 export const buildClothingPayload = async ({ payload, imageUrl = '', publicId = '', userId, aiAnalysis = {} }) => {
   const normalized = normalizePayload(payload);
 
-  return {
+  const material = normalized.material || normalized.fabric || aiAnalysis.material || '';
+  const secondaryColors = normalized.secondaryColors.length
+    ? normalized.secondaryColors
+    : aiAnalysis.secondaryColors || [];
+  const occasions = normalized.occasions.length ? normalized.occasions : aiAnalysis.occasions || [];
+  const cloudinaryPublicId = normalized.cloudinaryPublicId || publicId || '';
+
+  const result = {
     userId,
     imageUrl,
     publicId,
-    name: normalized.name || '',
+    cloudinaryPublicId,
+    name: normalized.name || aiAnalysis.name || '',
     category: normalized.category || aiAnalysis.category || 'other',
     subCategory: normalized.subCategory || aiAnalysis.subCategory || '',
     color: normalized.color || aiAnalysis.color || '',
-    secondaryColor: normalized.secondaryColor || aiAnalysis.secondaryColor || '',
+    secondaryColor: normalized.secondaryColor || secondaryColors[0] || '',
+    secondaryColors,
     pattern: normalized.pattern || aiAnalysis.pattern || 'solid',
-    fabric: normalized.fabric || aiAnalysis.fabric || 'unknown',
-    brand: normalized.brand || aiAnalysis.brand || '',
+    fabric: material || normalized.fabric || 'unknown',
+    material: material || 'unknown',
+    style: normalized.style || aiAnalysis.style || '',
+    fit: normalized.fit || aiAnalysis.fit || '',
+    brand: normalized.brand || '',
     size: normalized.size || '',
     season: normalized.season || aiAnalysis.season || 'all-season',
-    occasion: normalized.occasion || aiAnalysis.occasion || 'casual',
+    occasion: normalized.occasion || occasions[0] || 'casual',
+    occasions,
+    weatherSuitability: normalized.weatherSuitability,
     purchaseDate: normalized.purchaseDate || undefined,
     purchasePrice: normalized.purchasePrice || 0,
     favorite: normalized.favorite ?? false,
@@ -298,4 +366,14 @@ export const buildClothingPayload = async ({ payload, imageUrl = '', publicId = 
     notes: normalized.notes || '',
     // wearCount/lastWorn deliberately omitted — backend-owned, see wear.service.js
   };
+
+  if (normalized.aiAnalyzed) {
+    result.aiAnalysis = {
+      analyzed: true,
+      analyzedAt: new Date(),
+      confidence: normalizeConfidence(normalized.aiConfidence || {}),
+    };
+  }
+
+  return result;
 };

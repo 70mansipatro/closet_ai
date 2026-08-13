@@ -678,6 +678,13 @@ class WardrobeCard extends StatelessWidget {
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         padding: EdgeInsets.zero,
                       ),
+                      if (item.style.isNotEmpty)
+                        Chip(
+                          label: Text(item.style),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.zero,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),
