@@ -1,21 +1,34 @@
-import 'package:closet_ai/features/subscription/presentation/widgets/premium_feature_lock.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../application/analytics_providers.dart';
+import 'package:closet_ai/features/subscription/presentation/widgets/premium_feature_lock.dart';
 
-/// Ordered on-brand palette used to give each category/bar a distinct,
-/// readable color. Cycled by index when there are more bars than colors.
-const List<Color> _chartPalette = [
-  AppColors.cyan,
-  AppColors.brightBlue,
-  AppColors.purple,
-  AppColors.pink,
-  AppColors.green,
-  AppColors.orange,
-];
+import '../../application/analytics_providers.dart';
+import '../widgets/ai_insights_card.dart';
+import '../widgets/analytics_anim.dart';
+import '../widgets/analytics_date_filter.dart';
+import '../widgets/analytics_header.dart';
+import '../widgets/analytics_hero_card.dart';
+import '../widgets/analytics_kpi_card.dart';
+import '../widgets/analytics_states.dart';
+import '../widgets/category_analytics_card.dart';
+import '../widgets/color_analytics_card.dart';
+import '../widgets/cost_analytics_card.dart';
+import '../widgets/laundry_analytics_card.dart';
+import '../widgets/outfit_analytics_card.dart';
+import '../../../admin/widgets/kpi_card.dart' show KpiGrid;
+import '../widgets/wear_analytics_card.dart';
+
+void _invalidateAllAnalytics(WidgetRef ref) {
+  ref.invalidate(analyticsOverviewProvider);
+  ref.invalidate(wearAnalyticsProvider);
+  ref.invalidate(outfitAnalyticsProvider);
+  ref.invalidate(categoryAnalyticsProvider);
+  ref.invalidate(colorAnalyticsProvider);
+  ref.invalidate(laundryAnalyticsProvider);
+  ref.invalidate(costAnalyticsProvider);
+  ref.invalidate(analyticsInsightsProvider);
+}
 
 class AnalyticsPage extends ConsumerStatefulWidget {
   const AnalyticsPage({super.key});
@@ -26,6 +39,7 @@ class AnalyticsPage extends ConsumerStatefulWidget {
 
 class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
   String _dateFilter = 'this_month';
+  bool _refreshing = false;
 
   @override
   void initState() {
@@ -79,57 +93,20 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     ref.read(analyticsFilterProvider.notifier).state = {
       'from': from.toIso8601String(),
       'to': to.toIso8601String(),
-      'interval': _dateFilter == 'this_month' ? 'monthly' : 'weekly',
+      'interval': filter == 'this_month' ? 'monthly' : 'weekly',
     };
     setState(() {
       _dateFilter = filter;
     });
   }
 
-  Widget _buildSummaryCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: color, size: 26),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: _dateFilter == value,
-      onSelected: (selected) {
-        if (selected) _applyFilter(value);
-      },
-    );
+  Future<void> _handleRefresh() async {
+    setState(() => _refreshing = true);
+    _invalidateAllAnalytics(ref);
+    // Give the invalidated FutureProviders a beat to start refetching before
+    // clearing the header's spinner state.
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (mounted) setState(() => _refreshing = false);
   }
 
   @override
@@ -144,353 +121,202 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     final insightAsync = ref.watch(analyticsInsightsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Your Style Analytics')),
       body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(analyticsOverviewProvider);
-          ref.invalidate(wearAnalyticsProvider);
-          ref.invalidate(outfitAnalyticsProvider);
-          ref.invalidate(categoryAnalyticsProvider);
-          ref.invalidate(colorAnalyticsProvider);
-          ref.invalidate(laundryAnalyticsProvider);
-          ref.invalidate(costAnalyticsProvider);
-          ref.invalidate(analyticsInsightsProvider);
-        },
+        onRefresh: _handleRefresh,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
-            Text(
-              'Understand your wardrobe and wearing habits',
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
+            AnalyticsHeader(onRefresh: _handleRefresh, refreshing: _refreshing),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildFilterChip('Today', 'today'),
-                _buildFilterChip('This Week', 'this_week'),
-                _buildFilterChip('This Month', 'this_month'),
-                _buildFilterChip('30 Days', '30_days'),
-                _buildFilterChip('3 Months', '3_months'),
-                _buildFilterChip('6 Months', '6_months'),
-                _buildFilterChip('This Year', 'this_year'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            overviewAsync.when(
-              data: (overview) => Row(
-                children: [
-                  _buildSummaryCard(
-                    'Total Items',
-                    overview['wardrobeCount']?.toString() ?? '0',
-                    Icons.inventory_2,
-                    AppColors.brightBlue,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildSummaryCard(
-                    'Total Wears',
-                    overview['totalWears']?.toString() ?? '0',
-                    Icons.checkroom,
-                    AppColors.green,
-                  ),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) =>
-                  Center(child: Text('Unable to load overview: $error')),
-            ),
-            const SizedBox(height: 16),
-            const PremiumFeatureLock(
-              title: 'Advanced Analytics',
-              subtitle: 'Premium feature',
-            ),
-            const SizedBox(height: 16),
-            wearAsync.when(
-              data: (wear) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Wear Analytics',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildAnalyticsTile(
-                    'Unique Items Worn',
-                    wear['uniqueItemsWorn']?.toString() ?? '0',
-                  ),
-                  _buildAnalyticsTile(
-                    'Average Wears Per Item',
-                    wear['averageWearsPerItem']?.toString() ?? '0',
-                  ),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) =>
-                  Center(child: Text('Unable to load wear analytics: $error')),
-            ),
-            const SizedBox(height: 16),
-            outfitAsync.when(
-              data: (outfit) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Outfit Analytics',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildAnalyticsTile(
-                    'Planned Outfits',
-                    outfit['plannedOutfits']?.toString() ?? '0',
-                  ),
-                  _buildAnalyticsTile(
-                    'Worn Outfits',
-                    outfit['wornOutfits']?.toString() ?? '0',
-                  ),
-                  _buildAnalyticsTile(
-                    'Skipped Outfits',
-                    outfit['skippedOutfits']?.toString() ?? '0',
-                  ),
-                  _buildAnalyticsTile(
-                    'Completion Rate',
-                    '${outfit['completionRate']?.toString() ?? '0'}%',
-                  ),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Text('Unable to load outfit analytics: $error'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            categoryAsync.when(
-              data: (categories) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Category Breakdown',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCategoryBarChart(categories),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Text('Unable to load category analytics: $error'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            colorAsync.when(
-              data: (colors) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Color Usage',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ...colors
-                      .take(5)
-                      .map(
-                        (item) => _buildAnalyticsTile(
-                          item['label']?.toString() ?? 'Unknown',
-                          item['count']?.toString() ?? '0',
-                        ),
-                      ),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) =>
-                  Center(child: Text('Unable to load color analytics: $error')),
-            ),
-            const SizedBox(height: 16),
-            laundryAsync.when(
-              data: (laundry) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Laundry Analytics',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildAnalyticsTile(
-                    'Dirty',
-                    laundry['currentlyDirty']?.toString() ?? '0',
-                  ),
-                  _buildAnalyticsTile(
-                    'Washing',
-                    laundry['currentlyWashing']?.toString() ?? '0',
-                  ),
-                  _buildAnalyticsTile(
-                    'Drying',
-                    laundry['currentlyDrying']?.toString() ?? '0',
-                  ),
-                  _buildAnalyticsTile(
-                    'Ready',
-                    laundry['readyItems']?.toString() ?? '0',
-                  ),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Text('Unable to load laundry analytics: $error'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            costAsync.when(
-              data: (cost) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Cost Analytics',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildAnalyticsTile(
-                    'Wardrobe Value',
-                    '₹${cost['totalWardrobeValue']?.toString() ?? '0'}',
-                  ),
-                  _buildAnalyticsTile(
-                    'Avg Cost / Wear',
-                    '₹${cost['averageCostPerWear']?.toString() ?? '0'}',
-                  ),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) =>
-                  Center(child: Text('Unable to load cost analytics: $error')),
-            ),
-            const SizedBox(height: 16),
-            insightAsync.when(
-              data: (insight) => _buildInsights(insight),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) =>
-                  Center(child: Text('Unable to load insights: $error')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAnalyticsTile(String title, String value) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      trailing: Text(
-        value,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildCategoryBarChart(List<dynamic> categories) {
-    final filtered = categories
-        .map((item) {
-          final label = item['label']?.toString() ?? '';
-          final count = item['count'] is num
-              ? (item['count'] as num).toInt()
-              : int.tryParse(item['count']?.toString() ?? '') ?? 0;
-          return {'label': label, 'count': count};
-        })
-        .where((item) => (item['count'] as int) > 0)
-        .toList();
-
-    if (filtered.isEmpty) {
-      return const Text('No category data available yet.');
-    }
-
-    final bars = filtered.take(5).toList();
-    final maxValue = bars
-        .map((item) => item['count'] as int)
-        .fold<int>(0, (prev, value) => value > prev ? value : prev)
-        .toDouble();
-
-    return SizedBox(
-      height: 240,
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: (maxValue + 1).clamp(1, double.infinity),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
-                  if (index < 0 || index >= bars.length) {
-                    return const SizedBox.shrink();
-                  }
-                  final label = bars[index]['label'] as String;
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      label,
-                      style: const TextStyle(fontSize: 10),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
+            AnalyticsDateFilter(value: _dateFilter, onChanged: _applyFilter),
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              child: _combined3(
+                overviewAsync,
+                wearAsync,
+                costAsync,
+                skeletonHeight: 220,
+                onRetry: () {
+                  ref.invalidate(analyticsOverviewProvider);
+                  ref.invalidate(wearAnalyticsProvider);
+                  ref.invalidate(costAnalyticsProvider);
                 },
-                reservedSize: 64,
+                builder: (overview, wear, cost) =>
+                    AnalyticsHeroCard(overview: overview, wear: wear, cost: cost),
               ),
             ),
-          ),
-          borderData: FlBorderData(show: false),
-          barGroups: bars.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            return BarChartGroupData(
-              x: index,
-              barRods: [
-                BarChartRodData(
-                  toY: (item['count'] as int).toDouble(),
-                  width: 18,
-                  color: _chartPalette[index % _chartPalette.length],
-                  borderRadius: BorderRadius.circular(6),
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 60),
+              child: _combined2(
+                wearAsync,
+                outfitAsync,
+                skeletonHeight: 140,
+                onRetry: () {
+                  ref.invalidate(wearAnalyticsProvider);
+                  ref.invalidate(outfitAnalyticsProvider);
+                },
+                builder: (wear, outfit) => KpiGrid(
+                  cards: [
+                    AnalyticsKpiCard(
+                      label: 'Items Worn',
+                      value: (wear['uniqueItemsWorn'] as num?) ?? 0,
+                      icon: Icons.checkroom_outlined,
+                      subtitle: 'Unique items worn',
+                    ),
+                    AnalyticsKpiCard(
+                      label: 'Wear Frequency',
+                      value: (wear['averageWearsPerItem'] as num?) ?? 0,
+                      icon: Icons.repeat,
+                      subtitle: 'Avg wears / item',
+                      decimals: 1,
+                    ),
+                    AnalyticsKpiCard(
+                      label: 'Outfits Worn',
+                      value: (outfit['wornOutfits'] as num?) ?? 0,
+                      icon: Icons.style_outlined,
+                      subtitle: 'Total worn outfits',
+                    ),
+                    AnalyticsKpiCard(
+                      label: 'Completion Rate',
+                      value: (outfit['completionRate'] as num?) ?? 0,
+                      icon: Icons.donut_large_outlined,
+                      subtitle: 'Outfit completion',
+                      suffix: '%',
+                    ),
+                  ],
                 ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInsights(Map<String, dynamic> insight) {
-    final summary = insight['summary']?.toString() ?? '';
-    final recommendations = insight['recommendations'] as List<dynamic>? ?? [];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'AI Insights',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(summary),
-            const SizedBox(height: 12),
-            if (recommendations.isNotEmpty) ...[
-              const Text(
-                'Recommendations',
-                style: TextStyle(fontWeight: FontWeight.bold),
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 100),
+              child: ResponsiveTwoColumn(
+                left: _section(
+                  wearAsync,
+                  skeletonHeight: 220,
+                  onRetry: () => ref.invalidate(wearAnalyticsProvider),
+                  builder: (wear) => WearAnalyticsCard(wear: wear),
+                ),
+                right: _section(
+                  outfitAsync,
+                  skeletonHeight: 220,
+                  onRetry: () => ref.invalidate(outfitAnalyticsProvider),
+                  builder: (outfit) => OutfitAnalyticsCard(outfit: outfit),
+                ),
               ),
-              const SizedBox(height: 8),
-              ...recommendations.map(
-                (item) =>
-                    Text('• ${item['type']}: ${item['clothingId'] ?? ''}'),
+            ),
+            const SizedBox(height: 20),
+            const PremiumFeatureLock(
+              title: 'Unlock Advanced Style Intelligence ✨',
+              subtitle:
+                  'Get deeper wardrobe insights, outfit trends, cost efficiency and AI-powered recommendations.',
+              buttonLabel: 'Upgrade to Premium',
+            ),
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 140),
+              child: ResponsiveTwoColumn(
+                left: _section(
+                  categoryAsync,
+                  skeletonHeight: 260,
+                  onRetry: () => ref.invalidate(categoryAnalyticsProvider),
+                  builder: (categories) => CategoryAnalyticsCard(categories: categories),
+                ),
+                right: _section(
+                  colorAsync,
+                  skeletonHeight: 260,
+                  onRetry: () => ref.invalidate(colorAnalyticsProvider),
+                  builder: (colors) => ColorAnalyticsCard(colors: colors),
+                ),
               ),
-            ],
+            ),
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 180),
+              child: _section(
+                laundryAsync,
+                skeletonHeight: 200,
+                onRetry: () => ref.invalidate(laundryAnalyticsProvider),
+                builder: (laundry) => LaundryAnalyticsCard(laundry: laundry),
+              ),
+            ),
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 220),
+              child: _section(
+                costAsync,
+                skeletonHeight: 220,
+                onRetry: () => ref.invalidate(costAnalyticsProvider),
+                builder: (cost) => CostAnalyticsCard(cost: cost),
+              ),
+            ),
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 260),
+              child: _section(
+                insightAsync,
+                skeletonHeight: 220,
+                onRetry: () => ref.invalidate(analyticsInsightsProvider),
+                builder: (insight) => AIInsightsCard(insight: insight),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+/// Renders one section's `.when()` as skeleton / error card / data widget —
+/// shared plumbing so every analytics card gets the same premium
+/// loading/error treatment instead of a bare spinner or a raw error string.
+Widget _section<T>(
+  AsyncValue<T> async, {
+  required Widget Function(T data) builder,
+  required VoidCallback onRetry,
+  double skeletonHeight = 160,
+}) {
+  return async.when(
+    data: builder,
+    loading: () => AnalyticsSectionSkeleton(height: skeletonHeight),
+    error: (error, stack) => AnalyticsErrorCard(onRetry: onRetry),
+  );
+}
+
+/// Same as [_section] but combines two independent providers that a single
+/// card needs together (e.g. the KPI grid needs both wear and outfit data).
+Widget _combined2<A, B>(
+  AsyncValue<A> a,
+  AsyncValue<B> b, {
+  required Widget Function(A a, B b) builder,
+  required VoidCallback onRetry,
+  double skeletonHeight = 160,
+}) {
+  if (a.hasError || b.hasError) {
+    return AnalyticsErrorCard(onRetry: onRetry);
+  }
+  if (!a.hasValue || !b.hasValue) {
+    return AnalyticsSectionSkeleton(height: skeletonHeight);
+  }
+  return builder(a.value as A, b.value as B);
+}
+
+/// Same as [_combined2] but for three providers (the hero card needs
+/// overview + wear + cost together).
+Widget _combined3<A, B, C>(
+  AsyncValue<A> a,
+  AsyncValue<B> b,
+  AsyncValue<C> c, {
+  required Widget Function(A a, B b, C c) builder,
+  required VoidCallback onRetry,
+  double skeletonHeight = 160,
+}) {
+  if (a.hasError || b.hasError || c.hasError) {
+    return AnalyticsErrorCard(onRetry: onRetry);
+  }
+  if (!a.hasValue || !b.hasValue || !c.hasValue) {
+    return AnalyticsSectionSkeleton(height: skeletonHeight);
+  }
+  return builder(a.value as A, b.value as B, c.value as C);
 }

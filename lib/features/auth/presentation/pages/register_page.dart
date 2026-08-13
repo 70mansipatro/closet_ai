@@ -19,6 +19,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   bool _obscurePassword = true;
 
   @override
@@ -26,6 +28,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -90,6 +94,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
                   decoration: const InputDecoration(
                     labelText: 'Name',
                     prefixIcon: Icon(Icons.person_outline),
@@ -101,7 +107,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _emailController,
+                  focusNode: _emailFocusNode,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
@@ -113,7 +122,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _passwordController,
+                  focusNode: _passwordFocusNode,
                   obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) =>
+                      authState.isLoading ? null : _submit(),
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
