@@ -272,7 +272,7 @@ export const incrementFeatureUsage = async ({ userId, feature, isPremium = false
   const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   const record = await FeatureUsage.findOneAndUpdate(
     { userId, feature, period },
-    { $setOnInsert: { userId, feature, period, periodStart, periodEnd, count: 0 }, $inc: { count: 1 } },
+    { $setOnInsert: { userId, feature, period, periodStart, periodEnd }, $inc: { count: 1 } },
     { upsert: true, new: true }
   );
   return { feature, count: record.count, isPremium };

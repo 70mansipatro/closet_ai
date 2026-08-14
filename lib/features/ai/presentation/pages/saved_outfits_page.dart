@@ -1,7 +1,7 @@
 import 'package:closet_ai/core/services/api_client.dart';
 import 'package:closet_ai/core/theme/app_colors.dart';
-import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/ai/data/outfit_repository.dart';
+import 'package:closet_ai/features/ai/presentation/widgets/outfit_status_badge.dart';
 import 'package:flutter/material.dart';
 
 class SavedOutfitsPage extends StatefulWidget {
@@ -68,6 +68,31 @@ class _SavedOutfitsPageState extends State<SavedOutfitsPage> {
     }
   }
 
+  Future<void> _wearAgain(String id) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _repository.wearOutfit(id);
+      await _loadOutfits();
+      messenger.showSnackBar(const SnackBar(content: Text('Outfit marked as worn.')));
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Unable to mark outfit as worn. Please try again.')),
+      );
+    }
+  }
+
+  Future<void> _deleteOutfit(String id) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _repository.deleteOutfit(id);
+      await _loadOutfits();
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Unable to delete outfit. Please try again.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -112,39 +137,77 @@ class _SavedOutfitsPageState extends State<SavedOutfitsPage> {
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final outfit = _outfits[index];
+                  final id = outfit['_id'].toString();
+                  final status = (outfit['status'] ?? 'saved').toString();
+                  final thumbnailUrl = outfitThumbnailUrl(outfit);
+                  final name = (outfit['outfitName'] as String?)?.isNotEmpty == true
+                      ? outfit['outfitName'] as String
+                      : (outfit['top'] ?? outfit['occasion'] ?? 'Outfit').toString();
+
                   return Card(
-                    child: ListTile(
-                      leading: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          gradient: AppGradients.blueViolet,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.bookmark_rounded,
-                          color: Colors.white,
-                        ),
-                      ),
-                      title: Text(
-                        outfit['top'] ?? outfit['occasion'] ?? 'Outfit',
-                      ),
-                      subtitle: Text(
-                        '${outfit['bottom'] ?? '—'} • ${outfit['footwear'] ?? '—'}',
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(
-                          outfit['favorite'] == true
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: outfit['favorite'] == true
-                              ? AppColors.pink
-                              : null,
-                        ),
-                        onPressed: () => _toggleFavorite(
-                          outfit['_id'].toString(),
-                          outfit['favorite'] != true,
-                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: thumbnailUrl != null
+                                    ? Image.network(
+                                        thumbnailUrl,
+                                        width: 44,
+                                        height: 44,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => fallbackOutfitThumbnail(),
+                                      )
+                                    : fallbackOutfitThumbnail(),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(child: Text(name, style: Theme.of(context).textTheme.titleSmall)),
+                                        OutfitStatusBadge(status: status),
+                                      ],
+                                    ),
+                                    Text(
+                                      '${outfit['bottom'] ?? '—'} • ${outfit['footwear'] ?? '—'}',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  outfit['favorite'] == true ? Icons.favorite : Icons.favorite_border,
+                                  color: outfit['favorite'] == true ? AppColors.pink : null,
+                                ),
+                                onPressed: () => _toggleFavorite(id, outfit['favorite'] != true),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => _wearAgain(id),
+                                icon: const Icon(Icons.checkroom, size: 18),
+                                label: const Text('Wear Again'),
+                              ),
+                              TextButton.icon(
+                                onPressed: () => _deleteOutfit(id),
+                                icon: const Icon(Icons.delete_outline, size: 18),
+                                label: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   );

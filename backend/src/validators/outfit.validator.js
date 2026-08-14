@@ -22,6 +22,12 @@ export const createOutfitSchema = Joi.object({
   confidenceScore: Joi.number().min(0).max(100).default(0),
   reason: Joi.string().max(500).default(''),
   favorite: Joi.boolean().default(false),
+  outfitName: Joi.string().allow('', null).max(120).default(''),
+  style: Joi.string().allow('', null).max(50).default(''),
+  colorPreference: Joi.string().allow('', null).max(50).default(''),
+  aiGenerated: Joi.boolean().default(false),
+  status: Joi.string().valid('saved', 'worn').default('saved'),
+  suggestions: Joi.array().items(Joi.string().max(200)).default([]),
 });
 
 export const updateOutfitSchema = Joi.object({
@@ -40,6 +46,12 @@ export const updateOutfitSchema = Joi.object({
   confidenceScore: Joi.number().min(0).max(100).optional(),
   reason: Joi.string().max(500).optional(),
   favorite: Joi.boolean().optional(),
+  outfitName: Joi.string().allow('', null).max(120).optional(),
+  style: Joi.string().allow('', null).max(50).optional(),
+  colorPreference: Joi.string().allow('', null).max(50).optional(),
+  aiGenerated: Joi.boolean().optional(),
+  status: Joi.string().valid('saved', 'worn').optional(),
+  suggestions: Joi.array().items(Joi.string().max(200)).optional(),
 }).min(1);
 
 export const generateOutfitSchema = Joi.object({
@@ -47,4 +59,8 @@ export const generateOutfitSchema = Joi.object({
   weather: Joi.string().max(40).default('sunny'),
   temperature: Joi.number().min(-30).max(60).default(24),
   season: Joi.string().valid('spring', 'summer', 'autumn', 'winter', 'all-season').default('all-season'),
+  style: Joi.string().max(50).default('ai'),
+  colorPreference: Joi.string().max(50).default('any'),
+  favoritesOnly: Joi.boolean().default(false),
+  avoidRecentlyWorn: Joi.boolean().default(false),
 });

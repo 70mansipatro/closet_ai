@@ -5,6 +5,7 @@ import {
   createOrder,
   getActivePlans,
   getCurrentSubscription,
+  getFeatureUsage,
   getUserSubscriptionStatus,
   restoreSubscription,
   verifyPayment,
@@ -25,7 +26,22 @@ export const getCurrentSubscriptionHandler = async (req, res, next) => {
     const userId = req.user?._id || req.user?.userId;
     const current = await getCurrentSubscription(userId);
     const status = await getUserSubscriptionStatus(userId);
-    res.status(200).json({ success: true, data: { ...current, ...status, daysRemaining: status?.daysRemaining || 0 } });
+    const aiOutfitUsage = await getFeatureUsage({ userId, feature: 'ai_outfit' });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...current,
+        ...status,
+        daysRemaining: status?.daysRemaining || 0,
+        aiOutfitUsage: {
+          count: aiOutfitUsage.count,
+          limit: Number.isFinite(aiOutfitUsage.limit) ? aiOutfitUsage.limit : null,
+          remaining: Number.isFinite(aiOutfitUsage.limit) ? Math.max(0, aiOutfitUsage.limit - aiOutfitUsage.count) : null,
+          isPremium: aiOutfitUsage.isPremium,
+        },
+      },
+    });
   } catch (error) {
     next(error);
   }

@@ -23,6 +23,6 @@ router.put('/favorite', protect, favoriteOutfit);
 router.get('/:id', protect, getOutfit);
 router.delete('/:id', protect, deleteOutfit);
 router.put('/:id', protect, updateOutfit);
-router.post('/ai-generate', protect, aiGenerateOutfits);
+router.post('/ai-generate', protect, checkFeatureLimit('ai_outfit'), aiGenerateOutfits);
 
 export default router;

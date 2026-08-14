@@ -11,6 +11,7 @@ const outfitCalendarSchema = new mongoose.Schema(
     outerwearId: { type: mongoose.Schema.Types.ObjectId, ref: 'Clothing' },
     accessories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Clothing' }],
     notes: { type: String, default: '', maxlength: 1000 },
+    time: { type: String, trim: true, maxlength: 20, default: '' },
     occasion: { type: String, trim: true, maxlength: 80, default: 'casual' },
     weather: { type: String, trim: true, maxlength: 40, default: 'sunny' },
     temperature: { type: Number, default: 24 },

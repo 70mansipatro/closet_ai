@@ -29,6 +29,12 @@ const outfitSchema = new mongoose.Schema(
     confidenceScore: { type: Number, default: 0 },
     reason: { type: String, trim: true, default: '' },
     favorite: { type: Boolean, default: false },
+    outfitName: { type: String, trim: true, maxlength: 120, default: '' },
+    style: { type: String, trim: true, maxlength: 50, default: '' },
+    colorPreference: { type: String, trim: true, maxlength: 50, default: '' },
+    aiGenerated: { type: Boolean, default: false },
+    status: { type: String, enum: ['saved', 'worn'], default: 'saved' },
+    suggestions: { type: [String], default: [] },
   },
   { timestamps: true }
 );

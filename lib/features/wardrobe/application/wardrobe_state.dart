@@ -99,6 +99,7 @@ class WardrobeController extends StateNotifier<WardrobeState> {
     bool? favorite,
     String sortBy = 'createdAt',
     String sortOrder = 'desc',
+    int? limit,
   }) async {
     if (state.isLoading && !force) return;
     if (refresh) {
@@ -115,6 +116,7 @@ class WardrobeController extends StateNotifier<WardrobeState> {
     try {
       final response = await _repository.fetchItems(
         page: refresh ? 1 : state.page + 1,
+        limit: limit ?? 20,
         search:
             search ?? (state.searchQuery.isEmpty ? null : state.searchQuery),
         category: category,

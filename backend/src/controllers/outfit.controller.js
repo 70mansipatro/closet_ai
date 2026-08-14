@@ -98,17 +98,10 @@ export const generateOutfit = async (req, res, next) => {
     const userId = req.user?._id || req.user?.userId;
     console.log('[OUTFIT] Authenticated user', { userId });
 
-    const wardrobe = await Clothing.find({
-      userId,
-      isDeleted: { $ne: true },
-      deleted: { $ne: true },
-      deletedAt: { $exists: false },
-    }).lean();
+    const wardrobe = await Clothing.find({ userId }).lean();
 
     const dirtyItems = wardrobe.filter((item) => UNAVAILABLE_LAUNDRY_STATUSES.has(normalizeLaundryStatus(item?.laundryStatus)));
-    const cleanItems = wardrobe.filter(
-      (item) => !dirtyItems.includes(item) && !item.isDeleted && !item.deleted && !item.deletedAt,
-    );
+    const cleanItems = wardrobe.filter((item) => !dirtyItems.includes(item));
 
     console.log('[OUTFIT] Total clothes', { count: wardrobe.length });
     console.log('[OUTFIT] Clean clothes', { count: cleanItems.length });
@@ -125,6 +118,12 @@ export const generateOutfit = async (req, res, next) => {
     console.log('[OUTFIT] Wardrobe JSON', { wardrobe });
 
     const recommendation = await generateOutfitRecommendation({ wardrobe: cleanItems.length > 0 ? cleanItems : wardrobe, request: value });
+
+    if (!recommendation.success) {
+      res.status(200).json({ success: false, reason: recommendation.reason });
+      return;
+    }
+
     res.status(200).json({ success: true, data: recommendation });
   } catch (error) {
     next(error);
@@ -159,6 +158,8 @@ export const wearOutfit = async (req, res, next) => {
 
     console.log('[OUTFIT] Wear API payload', { outfitId, itemIds, now: now.toISOString() });
     console.log('[OUTFIT] Wear transaction complete', { outfitId, updatedCount: results.length });
+
+    await updateOutfitRecord({ userId: req.user._id, id: outfitId, updateData: { status: 'worn' } });
 
     res.status(200).json({
       success: true,

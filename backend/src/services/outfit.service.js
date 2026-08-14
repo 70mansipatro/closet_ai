@@ -6,6 +6,21 @@ const SEASON_TO_THEME = {
 };
 
 const COLOR_NEUTRALS = new Set(['white', 'black', 'gray', 'grey', 'cream', 'beige', 'tan', 'navy', 'brown', 'silver']);
+const COLOR_DARK = new Set(['black', 'navy', 'charcoal', 'maroon', 'brown', 'dark grey', 'dark gray', 'olive']);
+const COLOR_PASTEL = new Set(['pastel pink', 'lavender', 'mint', 'baby blue', 'peach', 'light pink', 'light blue', 'cream', 'powder blue', 'blush', 'lilac']);
+
+const STYLE_LABELS = {
+  casual: 'Casual',
+  elegant: 'Elegant',
+  minimal: 'Minimal',
+  streetwear: 'Streetwear',
+  sporty: 'Sporty',
+  formal: 'Formal',
+  traditional: 'Traditional',
+};
+
+const REQUIRED_CATEGORIES = ['top', 'bottom', 'footwear'];
+const RECENT_WORN_WINDOW_DAYS = 7;
 
 const normalize = (value) => (value ?? '').toString().trim().toLowerCase();
 
@@ -30,8 +45,11 @@ const normalizeItemCategory = (item) => {
 };
 
 const isSuitableForSeason = (item, season) => {
-  if (!item?.season || item.season === 'all-season') return true;
-  return normalize(item.season) === normalize(season);
+  const itemSeason = normalize(item?.season);
+  const requestSeason = normalize(season);
+  if (!itemSeason || itemSeason === 'all-season') return true;
+  if (!requestSeason || requestSeason === 'all-season') return true;
+  return itemSeason === requestSeason;
 };
 
 const isClean = (item) => {
@@ -68,6 +86,76 @@ const colorCompatibility = (topColor, bottomColor) => {
   return !clashes.some(([a, b]) => (top === a && bottom === b) || (top === b && bottom === a));
 };
 
+const matchesColorPreference = (color, preference) => {
+  const c = normalize(color);
+  if (!c) return false;
+
+  switch (normalize(preference)) {
+    case 'neutral':
+      return COLOR_NEUTRALS.has(c);
+    case 'dark':
+      return COLOR_DARK.has(c);
+    case 'pastel':
+      return COLOR_PASTEL.has(c);
+    case 'bright':
+      return !COLOR_NEUTRALS.has(c) && !COLOR_DARK.has(c) && !COLOR_PASTEL.has(c);
+    default:
+      return false;
+  }
+};
+
+const buildOutfitName = ({ style, occasion }) => {
+  const styleLabel = STYLE_LABELS[normalize(style)];
+  const occasionLabel = occasion ? occasion.toString().trim().replace(/^./, (c) => c.toUpperCase()) : 'Casual';
+  return styleLabel ? `${styleLabel} ${occasionLabel} Look` : `${occasionLabel} Look`;
+};
+
+const applyRequestFilters = (wardrobe, request) => {
+  let filtered = wardrobe;
+
+  if (request.favoritesOnly) {
+    filtered = filtered.filter((item) => Boolean(item?.favorite));
+  }
+
+  if (request.avoidRecentlyWorn) {
+    const cutoff = Date.now() - RECENT_WORN_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    filtered = filtered.filter((item) => !item?.lastWorn || new Date(item.lastWorn).getTime() < cutoff);
+  }
+
+  return filtered;
+};
+
+const finalizeRecommendation = (recommendation, request) => {
+  const hasCompleteCore = REQUIRED_CATEGORIES.every((key) => Boolean(recommendation[key]));
+
+  if (!hasCompleteCore) {
+    return {
+      success: false,
+      reason: 'Insufficient suitable wardrobe items',
+    };
+  }
+
+  return {
+    success: true,
+    outfitName: recommendation.outfitName || buildOutfitName({ style: request.style, occasion: request.occasion }),
+    occasion: request.occasion,
+    weather: request.weather,
+    style: request.style && request.style !== 'ai' ? request.style : recommendation.style || '',
+    colorPreference: request.colorPreference || 'any',
+    top: recommendation.top,
+    bottom: recommendation.bottom,
+    footwear: recommendation.footwear,
+    outerwear: recommendation.outerwear,
+    accessories: recommendation.accessories,
+    bag: recommendation.bag,
+    watch: recommendation.watch,
+    confidence: recommendation.confidence,
+    reason: recommendation.reason,
+    recommendedItems: recommendation.recommendedItems,
+    suggestions: Array.isArray(recommendation.suggestions) ? recommendation.suggestions.filter((s) => typeof s === 'string').slice(0, 5) : [],
+  };
+};
+
 const scoreItem = (item, request, selected) => {
   let score = 0;
   const season = normalize(request.season);
@@ -76,6 +164,14 @@ const scoreItem = (item, request, selected) => {
   if (item.favorite) score += 5;
   if (isSuitableForSeason(item, season)) score += 4;
   if (isClean(item)) score += 3;
+
+  if (request.style && request.style !== 'ai' && normalize(item.style) === normalize(request.style)) {
+    score += 3;
+  }
+
+  if (request.colorPreference && !['any', 'ai'].includes(normalize(request.colorPreference)) && matchesColorPreference(item.color, request.colorPreference)) {
+    score += 3;
+  }
 
   if (item.lastWorn) {
     const lastWorn = new Date(item.lastWorn);
@@ -185,6 +281,10 @@ const ensureRealWardrobeItems = (rawRecommendation, wardrobe = []) => {
     .filter(Boolean);
 
   normalized.recommendedItems = recommendedItems;
+  normalized.outfitName = typeof rawRecommendation.outfitName === 'string' ? rawRecommendation.outfitName.trim().slice(0, 120) : '';
+  normalized.suggestions = Array.isArray(rawRecommendation.suggestions)
+    ? rawRecommendation.suggestions.filter((s) => typeof s === 'string').slice(0, 5)
+    : [];
   return normalized;
 };
 
@@ -209,6 +309,8 @@ export const buildOutfitRecommendation = ({ wardrobe = [], request = {} }) => {
     weather: request.weather || 'sunny',
     temperature: request.temperature || 24,
     season: request.season || 'all-season',
+    style: request.style || 'ai',
+    colorPreference: request.colorPreference || 'any',
   };
 
   const wardrobeItems = wardrobe.filter(isUsableWardrobeItem);
@@ -286,11 +388,24 @@ export const buildOutfitRecommendation = ({ wardrobe = [], request = {} }) => {
 };
 
 export const generateOutfitRecommendation = async ({ wardrobe = [], request = {} }) => {
+  const safeRequest = {
+    occasion: request.occasion || 'casual',
+    weather: request.weather || 'sunny',
+    temperature: request.temperature || 24,
+    season: request.season || 'all-season',
+    style: request.style || 'ai',
+    colorPreference: request.colorPreference || 'any',
+    favoritesOnly: Boolean(request.favoritesOnly),
+    avoidRecentlyWorn: Boolean(request.avoidRecentlyWorn),
+  };
+
+  const filteredWardrobe = applyRequestFilters(wardrobe, safeRequest);
+  const fallback = buildOutfitRecommendation({ wardrobe: filteredWardrobe, request: safeRequest });
   const apiKey = process.env.GEMINI_API_KEY;
 
-  if (apiKey) {
+  if (apiKey && filteredWardrobe.length > 0) {
     try {
-      const structuredWardrobe = buildWardrobeSummary(wardrobe);
+      const structuredWardrobe = buildWardrobeSummary(filteredWardrobe);
       const prompt = [
         'Return JSON only.',
         'Use ONLY the clothing items provided below.',
@@ -299,12 +414,18 @@ export const generateOutfitRecommendation = async ({ wardrobe = [], request = {}
         'Do NOT return generic labels like Classic top, Versatile bottoms, or Comfortable shoes.',
         'If there is no suitable item in the wardrobe for a category, set that value to null.',
         'Prioritize least recently worn items, then favorites, then season and occasion fit, then weather and clean laundry status.',
-        'Avoid dirty items, duplicates, and recently worn items.',
-        'Return an object with keys: top, bottom, footwear, outerwear, accessories, bag, watch, confidence, reason, recommendedItems.',
+        'Avoid dirty items and duplicates.',
+        safeRequest.style !== 'ai' ? `Prefer items matching the "${safeRequest.style}" style when available.` : 'Pick the style that best fits the occasion and wardrobe.',
+        !['any', 'ai'].includes(safeRequest.colorPreference) ? `Prefer a "${safeRequest.colorPreference}" color palette when possible.` : '',
+        'Return an object with keys: outfitName, top, bottom, footwear, outerwear, accessories, bag, watch, confidence, reason, recommendedItems, suggestions.',
+        'outfitName should be a short creative name for the look (e.g. "Smart Casual").',
+        'suggestions should be an array of up to 3 short styling tips as strings.',
         'recommendedItems must be an array of real wardrobe objects with fields _id, name, and category.',
-        `Request: occasion=${request.occasion || 'casual'}, weather=${request.weather || 'sunny'}, temperature=${request.temperature || 24}, season=${request.season || 'all-season'}`,
+        `Request: occasion=${safeRequest.occasion}, weather=${safeRequest.weather}, temperature=${safeRequest.temperature}, season=${safeRequest.season}, style=${safeRequest.style}, colorPreference=${safeRequest.colorPreference}`,
         `Wardrobe: ${JSON.stringify(structuredWardrobe)}`,
-      ].join(' ');
+      ]
+        .filter(Boolean)
+        .join(' ');
 
       console.log('[OUTFIT] Gemini prompt', { prompt });
 
@@ -324,25 +445,26 @@ export const generateOutfitRecommendation = async ({ wardrobe = [], request = {}
         parsed = JSON.parse(candidateText.replace(/```json|```/g, '').trim());
       } catch (error) {
         console.warn('[OUTFIT] Invalid Gemini JSON response', error.message);
-        return buildOutfitRecommendation({ wardrobe, request });
+        return finalizeRecommendation(fallback, safeRequest);
       }
 
       console.log('[OUTFIT] Parsed Gemini JSON', { parsed });
 
       if (parsed && typeof parsed === 'object') {
-        const normalized = ensureRealWardrobeItems(parsed, wardrobe);
+        const normalized = ensureRealWardrobeItems(parsed, filteredWardrobe);
         console.log('[OUTFIT] Recommended IDs', { ids: normalized.recommendedItems.map((item) => item._id) });
         console.log('[OUTFIT] Recommended items', { items: normalized.recommendedItems });
-        return {
-          ...buildOutfitRecommendation({ wardrobe, request }),
+        const merged = {
+          ...fallback,
           ...normalized,
-          recommendedItems: normalized.recommendedItems.length > 0 ? normalized.recommendedItems : buildOutfitRecommendation({ wardrobe, request }).recommendedItems,
+          recommendedItems: normalized.recommendedItems.length > 0 ? normalized.recommendedItems : fallback.recommendedItems,
         };
+        return finalizeRecommendation(merged, safeRequest);
       }
     } catch (error) {
       console.warn('[OUTFIT] Gemini fallback failed', error.message);
     }
   }
 
-  return buildOutfitRecommendation({ wardrobe, request });
+  return finalizeRecommendation(fallback, safeRequest);
 };

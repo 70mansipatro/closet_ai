@@ -16,7 +16,6 @@ import '../../features/admin/screens/admin_users_screen.dart';
 import '../../features/admin/widgets/admin_guard.dart';
 import '../../features/admin/widgets/admin_shell.dart';
 import '../../features/ai/presentation/pages/ai_home_page.dart';
-import '../../features/ai/presentation/pages/ai_page.dart';
 import '../../features/ai_stylist/presentation/pages/ai_stylist_page.dart';
 import '../../features/ai/presentation/pages/favorite_outfits_page.dart';
 import '../../features/ai/presentation/pages/saved_outfits_page.dart';
@@ -147,7 +146,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/ai/generate',
-          builder: (context, state) => const AiPage(),
+          redirect: (context, state) => '/ai',
         ),
         GoRoute(
           path: '/ai/saved',
@@ -185,7 +184,15 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/calendar/schedule',
-          builder: (context, state) => const ScheduleOutfitPage(),
+          builder: (context, state) {
+            final extra = state.extra;
+            final params = extra is Map ? extra : const {};
+            return ScheduleOutfitPage(
+              outfitId: params['outfitId']?.toString(),
+              initialOccasion: params['occasion']?.toString(),
+              initialNotes: params['notes']?.toString(),
+            );
+          },
         ),
         GoRoute(
           path: '/calendar/day',

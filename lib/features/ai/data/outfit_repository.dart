@@ -8,16 +8,20 @@ class OutfitRepository {
   Future<Map<String, dynamic>> generateOutfit({
     required String occasion,
     required String weather,
-    required int temperature,
-    required String season,
+    String style = 'ai',
+    String colorPreference = 'any',
+    bool favoritesOnly = false,
+    bool avoidRecentlyWorn = false,
   }) {
     return _apiClient.post(
       '/outfits/generate',
       data: {
         'occasion': occasion,
         'weather': weather,
-        'temperature': temperature,
-        'season': season,
+        'style': style,
+        'colorPreference': colorPreference,
+        'favoritesOnly': favoritesOnly,
+        'avoidRecentlyWorn': avoidRecentlyWorn,
       },
     );
   }
