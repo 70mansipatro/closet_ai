@@ -7,6 +7,7 @@ import 'package:closet_ai/features/subscription/presentation/widgets/premium_ban
 import 'package:closet_ai/features/subscription/providers/subscription_providers.dart';
 import 'package:closet_ai/widgets/gradient_button.dart';
 import 'package:closet_ai/widgets/gradient_card.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,7 +36,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           ref.invalidate(currentSubscriptionProvider);
         },
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            AppLayout.scrollBottomPadding(context),
+          ),
           children: [
             const Text(
               'Unlock your complete AI wardrobe experience.',

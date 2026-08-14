@@ -1,7 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../core/layout/app_layout.dart';
+import '../core/theme/app_colors.dart';
 import '../core/theme/app_gradients.dart';
 
+class _NavItem {
+  const _NavItem(this.icon, this.selectedIcon, this.label);
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+}
+
+const _navItems = [
+  _NavItem(Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
+  _NavItem(Icons.bar_chart_outlined, Icons.bar_chart, 'Analytics'),
+  _NavItem(Icons.checkroom_outlined, Icons.checkroom, 'Wardrobe'),
+  _NavItem(Icons.auto_awesome_outlined, Icons.auto_awesome, 'AI'),
+  _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'Stylist'),
+  _NavItem(Icons.person_outline, Icons.person, 'Profile'),
+];
+
+/// Hosts the persistent ClosetAI navigation chrome around every tab screen.
+///
+/// - Phone/tablet widths: a fixed bottom [NavigationBar] that never scrolls
+///   away, with [resizeToAvoidBottomInset] disabled so the nav chrome stays
+///   put when a keyboard opens on a nested screen — the nested screen's own
+///   Scaffold is left to resize its own body around the keyboard instead of
+///   the whole shell (including the nav bar) sliding up.
+/// - Desktop/web widths: a side [NavigationRail], matching the pattern
+///   already used by AdminShell, so the app doesn't force a mobile-style
+///   bottom bar onto large screens.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
 
@@ -10,41 +38,62 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentPath = GoRouterState.of(context).matchedLocation;
+    final selected = _selectedIndex(currentPath);
+
+    if (AppLayout.isDesktop(context)) {
+      final railTheme = Theme.of(context).navigationRailTheme;
+      return Scaffold(
+        body: Row(
+          children: [
+            Container(
+              width: 124,
+              color: railTheme.backgroundColor,
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 32),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          for (var i = 0; i < _navItems.length; i++)
+                            _RailItem(
+                              item: _navItems[i],
+                              selected: i == selected,
+                              unselectedColor: railTheme.unselectedIconTheme?.color,
+                              onTap: () => _goTo(context, i),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(child: child),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: child,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(height: 2, decoration: const BoxDecoration(gradient: AppGradients.primary)),
           NavigationBar(
-            selectedIndex: _selectedIndex(currentPath),
+            selectedIndex: selected,
             onDestinationSelected: (index) => _goTo(context, index),
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                label: 'Dashboard',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.bar_chart_outlined),
-                label: 'Analytics',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.checkroom_outlined),
-                label: 'Wardrobe',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.auto_awesome_outlined),
-                label: 'AI',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.chat_bubble_outline),
-                label: 'Stylist',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                label: 'Profile',
-              ),
+            destinations: [
+              for (final item in _navItems)
+                NavigationDestination(
+                  icon: Icon(item.icon),
+                  selectedIcon: Icon(item.selectedIcon),
+                  label: item.label,
+                ),
             ],
           ),
         ],
@@ -81,5 +130,59 @@ class AppShell extends StatelessWidget {
       default:
         context.go('/dashboard');
     }
+  }
+}
+
+/// One destination in the desktop sidebar: an icon badge (gradient-filled
+/// when selected) stacked above its label, matching the rounded-square
+/// selection style from the app's brand identity.
+class _RailItem extends StatelessWidget {
+  const _RailItem({
+    required this.item,
+    required this.selected,
+    required this.unselectedColor,
+    required this.onTap,
+  });
+
+  final _NavItem item;
+  final bool selected;
+  final Color? unselectedColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: selected ? AppGradients.primary : null,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                selected ? item.selectedIcon : item.icon,
+                color: selected ? Colors.white : unselectedColor,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? AppColors.cyan : unselectedColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

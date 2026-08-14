@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/layout/app_layout.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../widgets/gradient_button.dart';
 import '../../../../widgets/section_card.dart';
@@ -618,7 +619,12 @@ class _WardrobeFormPageState extends ConsumerState<WardrobeFormPage> {
             key: _formKey,
             onChanged: _markDirty,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                AppLayout.scrollBottomPadding(context, buffer: 32),
+              ),
               children: [
                 _buildImageSection(context),
                 const SizedBox(height: 16),

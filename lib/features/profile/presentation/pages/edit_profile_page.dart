@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/layout/app_layout.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../widgets/gradient_button.dart';
@@ -105,7 +106,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         decoration: const BoxDecoration(gradient: AppGradients.navyBackground),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              AppLayout.scrollBottomPadding(context, buffer: 32),
+            ),
             child: Form(
               key: _formKey,
               child: Column(

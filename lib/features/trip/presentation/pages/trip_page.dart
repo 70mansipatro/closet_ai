@@ -1,5 +1,6 @@
 import 'package:closet_ai/features/trip/application/trip_providers.dart';
 import 'package:closet_ai/features/trip/domain/trip.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/widgets/gradient_button.dart';
 import 'package:flutter/material.dart';
@@ -157,7 +158,12 @@ class TripPage extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(tripListProvider),
             child: ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                AppLayout.scrollBottomPaddingWithFab(context),
+              ),
               itemCount: trips.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) =>
@@ -169,9 +175,12 @@ class TripPage extends ConsumerWidget {
         error: (error, stack) =>
             Center(child: Text('Could not load trips: $error')),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateTripDialog(context, ref),
-        child: const Icon(Icons.add),
+      floatingActionButton: AppLayout.liftedFab(
+        context,
+        FloatingActionButton(
+          onPressed: () => _showCreateTripDialog(context, ref),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

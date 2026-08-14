@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/layout/app_layout.dart';
 import '../../../../core/services/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
@@ -230,7 +231,7 @@ class _ClothingDetailPageState extends ConsumerState<ClothingDetailPage> {
                 await Future.wait([_loadItem(), _loadHistory()]);
               },
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomPadding(context)),
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(24),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/layout/app_layout.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../application/wardrobe_state.dart';
@@ -249,7 +250,12 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
                     ),
                   if (state.items.isNotEmpty)
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        AppLayout.scrollBottomPaddingWithFab(context),
+                      ),
                       sliver: SliverToBoxAdapter(
                         child: state.hasMore
                             ? FilledButton.icon(
@@ -287,11 +293,14 @@ class _WardrobePageState extends ConsumerState<WardrobePage> {
           },
         ),
       ),
-      floatingActionButton: _GradientFab(
-        onPressed: () async {
-          await context.push('/wardrobe/form');
-          await _reload();
-        },
+      floatingActionButton: AppLayout.liftedFab(
+        context,
+        _GradientFab(
+          onPressed: () async {
+            await context.push('/wardrobe/form');
+            await _reload();
+          },
+        ),
       ),
     );
   }

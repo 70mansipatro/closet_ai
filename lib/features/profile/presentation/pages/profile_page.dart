@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/admin/providers/admin_access_provider.dart';
 import 'package:closet_ai/features/auth/application/auth_state.dart';
@@ -186,7 +187,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomPadding(context)),
               children: [
                 _ProfileHeader(
                   user: user,

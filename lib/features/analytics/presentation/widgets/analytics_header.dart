@@ -32,8 +32,8 @@ class AnalyticsHeader extends StatelessWidget {
               children: [
                 Text(
                   'Style Analytics',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
                 const SizedBox(height: 4),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 import 'package:closet_ai/features/notifications/domain/notification_model.dart';
@@ -57,12 +58,15 @@ class RemindersPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Reminders')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final created = await context.push<bool>('/reminders/create');
-          if (created == true) ref.invalidate(remindersProvider);
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: AppLayout.liftedFab(
+        context,
+        FloatingActionButton(
+          onPressed: () async {
+            final created = await context.push<bool>('/reminders/create');
+            if (created == true) ref.invalidate(remindersProvider);
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
       body: remindersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -86,7 +90,12 @@ class RemindersPage extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(remindersProvider),
             child: ListView.separated(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.fromLTRB(
+                12,
+                12,
+                12,
+                AppLayout.scrollBottomPaddingWithFab(context),
+              ),
               itemCount: reminders.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {

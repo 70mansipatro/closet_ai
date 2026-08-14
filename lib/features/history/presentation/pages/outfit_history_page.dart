@@ -1,6 +1,7 @@
 import 'package:closet_ai/features/history/data/history_repository.dart';
 import 'package:closet_ai/core/services/api_client.dart';
 import 'package:closet_ai/core/theme/app_colors.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:flutter/material.dart';
 
 class OutfitHistoryPage extends StatefulWidget {
@@ -41,7 +42,12 @@ class _OutfitHistoryPageState extends State<OutfitHistoryPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                AppLayout.scrollBottomPadding(context),
+              ),
               itemCount: _items.length,
               itemBuilder: (context, index) {
                 final item = _items[index];

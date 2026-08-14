@@ -4,6 +4,7 @@ import 'package:closet_ai/features/trip/application/trip_providers.dart';
 import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/widgets/gradient_button.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -171,7 +172,12 @@ class _PackingPageState extends ConsumerState<PackingPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Packing Lists')),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          AppLayout.scrollBottomPadding(context),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

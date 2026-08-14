@@ -7,6 +7,7 @@ import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:closet_ai/core/theme/app_gradients.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 import 'package:closet_ai/features/notifications/domain/notification_model.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 
 class _FilterOption {
   const _FilterOption(this.label, this.type, {this.unreadOnly = false});
@@ -150,7 +151,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       onRefresh: () => ref.read(notificationListProvider.notifier).load(),
       child: ListView.separated(
         controller: _scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: EdgeInsets.fromLTRB(
+          0,
+          8,
+          0,
+          AppLayout.scrollBottomPadding(context),
+        ),
         itemCount: state.items.length + (state.hasMore ? 1 : 0),
         separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (context, index) {

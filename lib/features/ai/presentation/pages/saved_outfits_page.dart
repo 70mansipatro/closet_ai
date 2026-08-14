@@ -1,3 +1,4 @@
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:closet_ai/core/services/api_client.dart';
 import 'package:closet_ai/core/theme/app_colors.dart';
 import 'package:closet_ai/features/ai/data/outfit_repository.dart';
@@ -132,7 +133,7 @@ class _SavedOutfitsPageState extends State<SavedOutfitsPage> {
                 ),
               )
             : ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomPadding(context)),
                 itemCount: _outfits.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {

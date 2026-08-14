@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/laundry_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
+import '../../../../core/layout/app_layout.dart';
 
 class LaundryPage extends ConsumerStatefulWidget {
   const LaundryPage({super.key});
@@ -197,7 +198,12 @@ class _LaundryPageState extends ConsumerState<LaundryPage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          AppLayout.scrollBottomPadding(context),
+        ),
         child: Column(
           children: [
             _buildFilters(context),

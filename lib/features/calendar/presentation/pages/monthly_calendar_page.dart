@@ -4,6 +4,7 @@ import '../../application/calendar_providers.dart';
 import '../../../ai/data/outfit_repository.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
+import '../../../../core/layout/app_layout.dart';
 
 class MonthlyCalendarPage extends ConsumerWidget {
   const MonthlyCalendarPage({super.key});
@@ -87,6 +88,9 @@ class MonthlyCalendarPage extends ConsumerWidget {
           ),
           Expanded(
             child: GridView.builder(
+              padding: EdgeInsets.only(
+                bottom: AppLayout.scrollBottomPadding(context),
+              ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 7,
               ),

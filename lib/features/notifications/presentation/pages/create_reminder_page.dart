@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:closet_ai/core/theme/app_gradients.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 import 'package:closet_ai/features/notifications/domain/reminder_model.dart';
 import 'package:closet_ai/widgets/gradient_button.dart';
@@ -105,7 +106,12 @@ class _CreateReminderPageState extends ConsumerState<CreateReminderPage> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            AppLayout.scrollBottomPadding(context),
+          ),
           children: [
             DropdownButtonFormField<String>(
               initialValue: _type,

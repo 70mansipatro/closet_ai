@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../widgets/gradient_button.dart';
+
 /// A pulsing rounded placeholder block shown while a section's provider is
 /// loading, in place of a bare [CircularProgressIndicator]. Purely decorative
 /// — callers control size via [height]/[width].
@@ -97,6 +99,54 @@ class AnalyticsErrorCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Full-page placeholder shown instead of the analytics dashboard when the
+/// user's wardrobe has zero clothing items — every other section would just
+/// render fake-looking zeroes, so we replace them with a single CTA instead.
+class AnalyticsEmptyWardrobe extends StatelessWidget {
+  const AnalyticsEmptyWardrobe({super.key, required this.onAddClothing});
+
+  final VoidCallback onAddClothing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
+      child: Column(
+        children: [
+          Icon(
+            Icons.auto_awesome_outlined,
+            size: 40,
+            color: colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Your wardrobe is waiting ✨',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add your first clothing item to unlock wardrobe insights.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.65),
+                ),
+          ),
+          const SizedBox(height: 24),
+          GradientButton(
+            label: 'Add Clothing',
+            icon: Icons.add,
+            expand: false,
+            onPressed: onAddClothing,
+          ),
+        ],
       ),
     );
   }

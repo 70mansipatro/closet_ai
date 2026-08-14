@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:closet_ai/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:closet_ai/features/subscription/presentation/widgets/premium_feature_lock.dart';
 
+import '../../../../core/layout/app_layout.dart';
 import '../../application/analytics_providers.dart';
 import '../widgets/ai_insights_card.dart';
 import '../widgets/analytics_anim.dart';
@@ -120,14 +123,26 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     final costAsync = ref.watch(costAnalyticsProvider);
     final insightAsync = ref.watch(analyticsInsightsProvider);
 
+    final wardrobeCount = overviewAsync.value?['wardrobeCount'] as num?;
+    final isEmptyWardrobe = overviewAsync.hasValue && (wardrobeCount ?? 0) == 0;
+
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Analytics'),
+        actions: const [NotificationBell()],
+      ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomPadding(context)),
           children: [
             AnalyticsHeader(onRefresh: _handleRefresh, refreshing: _refreshing),
             const SizedBox(height: 16),
+            if (isEmptyWardrobe)
+              AnalyticsEmptyWardrobe(
+                onAddClothing: () => context.push('/wardrobe/form'),
+              )
+            else ...[
             AnalyticsDateFilter(value: _dateFilter, onChanged: _applyFilter),
             const SizedBox(height: 20),
             FadeSlideIn(
@@ -261,6 +276,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                 builder: (insight) => AIInsightsCard(insight: insight),
               ),
             ),
+            ],
           ],
         ),
       ),

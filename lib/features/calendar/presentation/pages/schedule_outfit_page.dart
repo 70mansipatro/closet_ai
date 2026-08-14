@@ -2,6 +2,7 @@ import 'package:closet_ai/core/services/api_client.dart';
 import 'package:closet_ai/features/calendar/data/calendar_repository.dart';
 import 'package:closet_ai/widgets/gradient_button.dart';
 import 'package:closet_ai/widgets/section_card.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -85,7 +86,12 @@ class _ScheduleOutfitPageState extends State<ScheduleOutfitPage> {
       appBar: AppBar(title: const Text('Schedule Outfit')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            AppLayout.scrollBottomPadding(context),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

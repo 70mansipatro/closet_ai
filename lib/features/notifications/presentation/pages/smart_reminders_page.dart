@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:closet_ai/core/theme/app_gradients.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 
 class SmartRemindersPage extends ConsumerWidget {
@@ -31,7 +32,12 @@ class SmartRemindersPage extends ConsumerWidget {
         data: (settings) {
           final controller = ref.read(smartReminderSettingsProvider.notifier);
           return ListView(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.fromLTRB(
+              12,
+              12,
+              12,
+              AppLayout.scrollBottomPadding(context),
+            ),
             children: [
               Card(
                 child: SwitchListTile(

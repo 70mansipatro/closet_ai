@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:closet_ai/core/theme/app_gradients.dart';
+import 'package:closet_ai/core/layout/app_layout.dart';
 import 'package:closet_ai/features/notifications/application/notification_providers.dart';
 
 class NotificationSettingsPage extends ConsumerWidget {
@@ -31,7 +32,9 @@ class NotificationSettingsPage extends ConsumerWidget {
         data: (preferences) {
           final controller = ref.read(notificationPreferencesProvider.notifier);
           return ListView(
-            padding: const EdgeInsets.only(bottom: 24),
+            padding: EdgeInsets.only(
+              bottom: AppLayout.scrollBottomPadding(context),
+            ),
             children: [
               _SettingsGroup(
                 title: 'General',
