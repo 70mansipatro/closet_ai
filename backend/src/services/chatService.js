@@ -3,9 +3,6 @@ import { buildContextForUser } from './contextBuilderService.js';
 import { createConversationSchema, sendMessageSchema, validateObjectId } from '../validators/chatValidator.js';
 import ChatConversation from '../models/ChatConversation.js';
 import ChatMessage from '../models/ChatMessage.js';
-import Clothing from '../models/Clothing.js';
-import Outfit from '../models/Outfit.js';
-import Trip from '../models/Trip.js';
 import { getWeather } from './weather.service.js';
 
 export const detectIntent = (message = '') => {
@@ -24,67 +21,123 @@ export const detectIntent = (message = '') => {
   return 'GENERAL_STYLE';
 };
 
-const sanitizeAndValidateResponse = (payload, wardrobeIds = []) => {
-  const cleaned = {
-    intent: payload?.intent || 'GENERAL_STYLE',
+const sanitizeAndValidateResponse = (payload, wardrobeIds = [], { isFallback = false } = {}) => {
+  const allowedIds = new Set(wardrobeIds.map(String));
+
+  const sanitizeRecommendationList = (list) =>
+    (Array.isArray(list) ? list : [])
+      .filter((item) => item && typeof item === 'object')
+      .map((recommendation) => ({
+        ...recommendation,
+        clothingIds: Array.isArray(recommendation.clothingIds)
+          ? recommendation.clothingIds.filter((id) => allowedIds.has(String(id)))
+          : [],
+      }));
+
+  return {
+    intent: typeof payload?.intent === 'string' ? payload.intent : 'GENERAL_STYLE',
     message: typeof payload?.message === 'string' ? payload.message : 'Here is a tailored suggestion.',
-    recommendations: Array.isArray(payload?.recommendations) ? payload.recommendations : [],
-    actions: Array.isArray(payload?.actions) ? payload.actions : [],
+    recommendations: sanitizeRecommendationList(payload?.recommendations),
+    alternatives: sanitizeRecommendationList(payload?.alternatives),
+    missingItems: Array.isArray(payload?.missingItems) ? payload.missingItems.filter((item) => typeof item === 'string') : [],
+    actions: {
+      canSave: Boolean(payload?.actions?.canSave),
+      canSchedule: Boolean(payload?.actions?.canSchedule),
+      canWear: Boolean(payload?.actions?.canWear),
+    },
+    isFallback,
   };
-
-  const allowedIds = new Set(wardrobeIds);
-  cleaned.recommendations = (cleaned.recommendations || []).map((recommendation) => {
-    if (recommendation?.clothingIds) {
-      recommendation.clothingIds = (recommendation.clothingIds || []).filter((id) => allowedIds.has(String(id)));
-    }
-    return recommendation;
-  });
-
-  return cleaned;
 };
 
+const findUpcomingTripWeather = async (trips = []) => {
+  const now = new Date();
+  const trip = (trips || []).find((t) => t?.destination && t?.startDate && t?.endDate && new Date(t.endDate) >= now);
+  if (!trip) return null;
+
+  try {
+    return await getWeather({ city: trip.destination, startDate: trip.startDate, endDate: trip.endDate });
+  } catch (error) {
+    console.warn('[CHAT] weather lookup failed', error.message);
+    return null;
+  }
+};
+
+const RESPONSE_CONTRACT = 'Respond with ONLY valid JSON (no markdown fences, no extra text) matching exactly this shape: {"intent": string, "message": string, "recommendations": [{"title": string, "clothingIds": string[], "occasion": string, "style": string, "weather": string, "temperature": number|null, "reason": string, "rating": number}], "alternatives": [], "missingItems": string[], "actions": {"canSave": boolean, "canSchedule": boolean, "canWear": boolean}}.';
+
 const generateStylistReply = async ({ userId, message, context }) => {
-  const wardrobeItems = (context?.wardrobe || []).map((item) => ({
-    _id: item._id,
-    name: item.category,
-    category: item.category,
-    laundryStatus: item.laundryStatus,
-    season: item.season,
-    occasion: item.occasion,
-    lastWorn: item.lastWorn,
-    wearCount: item.wearCount || 0,
-  }));
-
-  const wardrobeIds = wardrobeItems.map((item) => String(item._id));
+  const wardrobeIds = (context?.wardrobe || []).map((item) => String(item._id));
   const intent = detectIntent(message);
+  const weather = intent === 'PACKING' ? await findUpcomingTripWeather(context?.trips) : null;
 
-  const baseMessage = `You are ClosetAI Stylist. Use the user's wardrobe and recent history. Intent: ${intent}. Respond in JSON with keys intent, message, recommendations, actions. Use only clothing IDs that are present in the wardrobe context. If no suitable clothes, clearly say so. Avoid dirty items.`;
-  const prompt = [baseMessage, JSON.stringify(context)].join('\n');
+  const weatherInstruction = weather
+    ? `Known weather for the relevant trip: ${JSON.stringify(weather)}.`
+    : 'No weather data is available right now — if weather is relevant to your answer, say plainly that it is unavailable instead of inventing it.';
+
+  const baseMessage = [
+    'You are ClosetAI Stylist, a personal fashion assistant.',
+    `Detected intent: ${intent}.`,
+    'Only use clothing IDs that appear in the "wardrobe" array below — never invent an item or ID. Items listed under "laundry" are dirty/unavailable and must never be recommended.',
+    weatherInstruction,
+    RESPONSE_CONTRACT,
+  ].join(' ');
+
+  const contextPayload = JSON.stringify({ ...context, weather });
+  const prompt = [baseMessage, contextPayload].join('\n');
+
+  const callGemini = async () => {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL || 'gemini-2.0-flash'}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    });
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    return JSON.parse(text.replace(/```json|```/g, '').trim());
+  };
+
+  const callOpenAi = async () => {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        messages: [{ role: 'system', content: baseMessage }, { role: 'user', content: contextPayload }],
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+      }),
+    });
+    const data = await response.json();
+    const text = data?.choices?.[0]?.message?.content || '{}';
+    return JSON.parse(text.replace(/```json|```/g, '').trim());
+  };
 
   if (process.env.GEMINI_API_KEY) {
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL || 'gemini-2.0-flash'}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      });
-
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-      return sanitizeAndValidateResponse(parsed, wardrobeIds);
+      return sanitizeAndValidateResponse(await callGemini(), wardrobeIds);
     } catch (error) {
-      console.warn('[CHAT] Gemini fallback due to parsing error', error.message);
+      console.warn('[CHAT] Gemini call failed, trying next provider', error.message);
+    }
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      return sanitizeAndValidateResponse(await callOpenAi(), wardrobeIds);
+    } catch (error) {
+      console.warn('[CHAT] OpenAI fallback failed', error.message);
     }
   }
 
   const fallbackResponse = {
     intent,
-    message: 'Here is a stylish recommendation based on your closet.',
-    recommendations: wardrobeIds.length > 0 ? [{ type: 'outfit', clothingIds: wardrobeIds.slice(0, 3), reason: 'A practical outfit choice from your wardrobe.' }] : [],
-    actions: [{ type: 'VIEW_OUTFIT', outfitId: '' }],
+    message: 'I ran into trouble reaching the stylist AI, so here is a safe suggestion from your closet instead.',
+    recommendations: wardrobeIds.length > 0
+      ? [{ title: 'Everyday Pick', clothingIds: wardrobeIds.slice(0, 3), occasion: '', style: '', weather: '', temperature: null, reason: 'A practical outfit choice from your wardrobe while the AI stylist is unavailable.', rating: 5 }]
+      : [],
+    alternatives: [],
+    missingItems: wardrobeIds.length === 0 ? ['No clean, ready-to-wear items were found in your wardrobe.'] : [],
+    actions: { canSave: wardrobeIds.length > 0, canSchedule: wardrobeIds.length > 0, canWear: wardrobeIds.length > 0 },
   };
-  return sanitizeAndValidateResponse(fallbackResponse, wardrobeIds);
+  return sanitizeAndValidateResponse(fallbackResponse, wardrobeIds, { isFallback: true });
 };
 
 export const createConversation = async ({ userId, payload = {} }) => {
@@ -163,7 +216,10 @@ export const sendMessage = async ({ userId, conversationId, payload }) => {
     metadata: {
       intent: aiResponse.intent,
       recommendations: aiResponse.recommendations,
+      alternatives: aiResponse.alternatives,
+      missingItems: aiResponse.missingItems,
       actions: aiResponse.actions,
+      isFallback: aiResponse.isFallback,
       wardrobeSnapshot: context?.wardrobe?.slice(0, 6) || [],
     },
   });

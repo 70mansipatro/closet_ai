@@ -1,8 +1,8 @@
 import Clothing from '../models/Clothing.js';
 import Outfit from '../models/Outfit.js';
+import OutfitCalendar from '../models/OutfitCalendar.js';
 import Trip from '../models/Trip.js';
 import WearHistory from '../models/WearHistory.js';
-import { getWeather } from './weather.service.js';
 
 const cleanLaundryStatus = (value) => String(value || '').trim().toLowerCase();
 
@@ -43,6 +43,7 @@ export const buildChatContext = ({ userId, message, recentMessages = [], wardrob
   const normalizedCalendar = (calendar || []).slice(0, 6).map((entry) => ({
     date: entry?.date,
     outfitId: entry?.outfitId ? String(entry.outfitId) : null,
+    occasion: entry?.occasion,
     notes: entry?.notes,
   }));
 
@@ -68,13 +69,16 @@ export const buildChatContext = ({ userId, message, recentMessages = [], wardrob
 };
 
 export const buildContextForUser = async ({ userId, message, recentMessages = [] }) => {
-  const [wardrobeItems, laundryItems, wearHistoryItems, calendarItems, tripItems] = await Promise.all([
+  const [wardrobeItems, wearHistoryItems, calendarItems, tripItems] = await Promise.all([
     Clothing.find({ userId }).lean().sort({ updatedAt: -1 }).limit(80),
-    [] ,
     WearHistory.find({ userId }).lean().sort({ date: -1 }).limit(20),
-    [],
+    OutfitCalendar.find({ userId, date: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) } }).lean().sort({ date: 1 }).limit(10),
     Trip.find({ owner: userId }).lean().sort({ startDate: 1 }).limit(20),
   ]);
+
+  const laundryItems = wardrobeItems
+    .filter((item) => item && item._id && !isReadyToWear(item))
+    .map((item) => ({ clothingId: item._id, status: item.laundryStatus }));
 
   return buildChatContext({
     userId,
